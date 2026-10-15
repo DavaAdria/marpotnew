@@ -35,10 +35,10 @@ const initialData = [
 
 const dict = {
   id: {
-    title: "Marine Geoportal", dashboard: "Dasbor", stations: "Stasiun Peta",
+    title: "Register Geoportal (Re-Port)", dashboard: "Dasbor", stations: "Stasiun Peta",
     adminLogin: "Login Admin", logout: "Keluar", addData: "Tambah Data",
-    aboutTitle: "Tentang Marine Geoportal", aboutSub: "Platform Pemantauan Oseanografi Interaktif",
-    aboutDesc: "Marine Geoportal adalah sistem pemantauan kelautan mutakhir yang mengintegrasikan data lapangan dan analisis geospasial secara real-time. Dilengkapi dengan manajemen stasiun dinamis, visualisasi pemetaan, dan sistem inventaris aset untuk mendukung riset pesisir dan pelestarian lingkungan laut.",
+    aboutTitle: "Tentang Register Geoportal (Re-Port)", aboutSub: "Platform Pemantauan Oseanografi Interaktif",
+    aboutDesc: "Register Geoportal (Re-port) merupakan sebuah portal yang memuat data mengenai informasi geospasial kelautan yang dirancang oleh Register Undip sebagai bahan pembelajaran dan edukasi mahasiswa mengenai penginderaan jauh dan sistem informasi geografi dalam lingkup kelautan. Geoportal ini mengatur dan menyediakan layanan, pencarian, dan akses untuk informasi geospasial kelautan. Geoportal memiliki fungsi penerbitan data oleh penyedia layanan, pencarian dan penemuan informasi oleh pengguna dan akses ke informasi geospasial dalam ruang lingkup kelautan.",
     feat1: "Integrasi Data Lapangan", feat2: "Manajemen Stasiun Dinamis", feat3: "Pemfilteran Kategori Peta",
     feat4: "Analisis Geospasial", feat5: "Ekstraksi Foto GDrive", feat6: "Keamanan Akses Admin",
     filterTitle: "Filter Data", showing: "Menampilkan", activeSpots: "titik aktif",
@@ -51,10 +51,10 @@ const dict = {
     saveSuccess: "Berhasil! Data tersimpan dengan aman di memori lokal aplikasimu."
   },
   en: {
-    title: "Marine Geoportal", dashboard: "Dashboard", stations: "Map Stations",
+    title: "Register Geoportal (Re-Port)", dashboard: "Dashboard", stations: "Map Stations",
     adminLogin: "Admin Login", logout: "Logout", addData: "Add Data",
-    aboutTitle: "About Marine Geoportal", aboutSub: "Interactive Oceanographic Monitoring Platform",
-    aboutDesc: "Marine Geoportal is a state-of-the-art oceanographic monitoring system integrating field data and real-time geospatial analysis. It features dynamic station management, mapping visualization, and asset inventory systems to support coastal research and marine environmental protection.",
+    aboutTitle: "About Register Geoportal (Re-Port)", aboutSub: "Interactive Oceanographic Monitoring Platform",
+    aboutDesc: "Register Geoportal (Re-Port) is a state-of-the-art oceanographic monitoring system integrating field data and real-time geospatial analysis. It features dynamic station management, mapping visualization, and asset inventory systems to support coastal research and marine environmental protection.",
     feat1: "Field Data Integration", feat2: "Dynamic Station Management", feat3: "Map Category Filtering",
     feat4: "Geospatial Analysis", feat5: "GDrive Photo Extraction", feat6: "Admin Access Security",
     filterTitle: "Data Filter", showing: "Showing", activeSpots: "active spots",
