@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from 'react-leaflet';
 import { 
-  Map as MapIcon, Filter, Database, X, Check, Menu, Plus, Lock, LogOut, User, 
-  Globe, Moon, Sun, Droplet, Activity, FileText, LayoutDashboard, MapPin, ShieldAlert
+  Filter, Database, X, Check, Menu, Plus, LogOut, User, 
+  Globe, Moon, Sun, Droplet, Mail, Instagram, MessageCircle
 } from 'lucide-react'; 
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -37,10 +37,9 @@ const dict = {
   id: {
     title: "Register Geoportal (Re-Port)", dashboard: "Dasbor", stations: "Stasiun Peta",
     adminLogin: "Login Admin", logout: "Keluar", addData: "Tambah Data",
-    aboutTitle: "Tentang Register Geoportal (Re-Port)",
-    aboutDesc: "Register Geoportal (Re-port) merupakan sebuah portal yang memuat data mengenai informasi geospasial kelautan yang dirancang oleh Register Undip sebagai bahan pembelajaran dan edukasi mahasiswa mengenai penginderaan jauh dan sistem informasi geografi dalam lingkup kelautan. Geoportal ini mengatur dan menyediakan layanan, pencarian, dan akses untuk informasi geospasial kelautan. Geoportal memiliki fungsi penerbitan data oleh penyedia layanan, pencarian dan penemuan informasi oleh pengguna dan akses ke informasi geospasial dalam ruang lingkup kelautan.",
-    feat1: "Integrasi Data Lapangan", feat2: "Manajemen Stasiun Dinamis", feat3: "Pemfilteran Kategori Peta",
-    feat4: "Analisis Geospasial", feat5: "Ekstraksi Foto GDrive", feat6: "Keamanan Akses Admin",
+    aboutTitle: "Tentang Register Geoportal (Re-Port)", aboutSub: "Platform Pemantauan Oseanografi Interaktif",
+    aboutDesc: "Register Geoportal (Re-port) merupakan sebuah portal yang memuat data mengenai informasi geospasial kelautan yang dirancang oleh Register Undip sebagai bahan pembelajaran dan edukasi mahasiswa mengenai penginderaan jauh dan sistem informasi geografi dalam lingkup kelautan. Geoportal ini mengatur dan menyediakan layanan, pencarian, dan akses untuk informasi geospasial kelautan.",
+    contactUs: "Hubungi Kami",
     filterTitle: "Filter Data", showing: "Menampilkan", activeSpots: "titik aktif",
     mapCategory: "Kategori Pemetaan", fullMeta: "Lihat Metadata Penuh",
     modalAddTitle: "Input Stasiun Baru", saveBtn: "Simpan & Tampilkan",
@@ -54,9 +53,8 @@ const dict = {
     title: "Register Geoportal (Re-Port)", dashboard: "Dashboard", stations: "Map Stations",
     adminLogin: "Admin Login", logout: "Logout", addData: "Add Data",
     aboutTitle: "About Register Geoportal (Re-Port)", aboutSub: "Interactive Oceanographic Monitoring Platform",
-    aboutDesc: "Register Geoportal (Re-Port) is a state-of-the-art oceanographic monitoring system integrating field data and real-time geospatial analysis. It features dynamic station management, mapping visualization, and asset inventory systems to support coastal research and marine environmental protection.",
-    feat1: "Field Data Integration", feat2: "Dynamic Station Management", feat3: "Map Category Filtering",
-    feat4: "Geospatial Analysis", feat5: "GDrive Photo Extraction", feat6: "Admin Access Security",
+    aboutDesc: "Register Geoportal (Re-port) is a portal containing data on marine geospatial information designed by Register Undip as learning and educational material for students regarding remote sensing and geographic information systems within the marine scope. This geoportal manages and provides services, searches, and access to marine geospatial information.",
+    contactUs: "Contact Us",
     filterTitle: "Data Filter", showing: "Showing", activeSpots: "active spots",
     mapCategory: "Mapping Category", fullMeta: "View Full Metadata",
     modalAddTitle: "Input New Station", saveBtn: "Save & Display",
@@ -76,10 +74,7 @@ export default function App() {
 
   const [activeFilters, setActiveFilters] = useState(categories);
   const [modalData, setModalData] = useState(null);
-  
-  // 3. Perilaku Sidebar: Sekarang defaultnya selalu FALSE (tertutup) saat pindah menu, bahkan di desktop
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
   const [stations, setStations] = useState([]);
   
   const [isAdmin, setIsAdmin] = useState(false);
@@ -92,13 +87,11 @@ export default function App() {
   });
 
   useEffect(() => {
-    // Kita hapus kode yang membuka sidebar otomatis di desktop
     const savedStations = localStorage.getItem('marineGeoportalData');
     if (savedStations) setStations(JSON.parse(savedStations));
     else { setStations(initialData); localStorage.setItem('marineGeoportalData', JSON.stringify(initialData)); }
   }, []);
 
-  // Saat berpindah tab ke 'stations', pastikan sidebar tertutup
   useEffect(() => {
     if (activeTab === 'stations') {
       setIsSidebarOpen(false);
@@ -162,10 +155,7 @@ export default function App() {
   return (
     <div className={`flex flex-col h-screen w-screen overflow-x-hidden font-sans transition-colors duration-300 ${theme.bgApp} ${theme.textMain}`}>
       
-      {/* NAVBAR REVISI SESUAI INSTRUKSI */}
       <header className={`${theme.bgNav} border-b px-3 sm:px-6 py-2.5 sm:py-4 flex flex-col md:flex-row gap-2 md:gap-0 justify-between items-center z-[1000] shadow-sm w-full shrink-0`}>
-        
-        {/* 1. Kiri: Logo + Menu Dashboard & Peta berjejer */}
         <div className="flex flex-col sm:flex-row items-center w-full md:w-auto gap-3 sm:gap-6">
           <div className="flex items-center gap-2 shrink-0">
             <div className="bg-blue-600 p-1.5 sm:p-2 rounded-xl text-white shadow-md shadow-blue-500/30">
@@ -176,7 +166,6 @@ export default function App() {
             </h1>
           </div>
 
-          {/* Menu Tab Switcher (sekarang berada di sebelah judul pada desktop) */}
           <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-bold justify-center gap-1 w-full sm:w-auto">
             <button 
               onClick={() => setActiveTab('dashboard')}
@@ -193,23 +182,18 @@ export default function App() {
           </div>
         </div>
 
-        {/* 1. Kanan: Hanya Lang Switch & Dark Mode */}
         <div className="flex items-center justify-end w-full md:w-auto gap-1.5 sm:gap-3 text-xs sm:text-sm mt-2 sm:mt-0">
           <button onClick={() => setLang(lang === 'id' ? 'en' : 'id')} className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-bold text-xs sm:text-sm ${theme.bgCard} hover:border-blue-500 transition`}>
             <Globe size={13} className="sm:w-4 sm:h-4" /> {lang.toUpperCase()}
           </button>
-          
           <button onClick={() => setIsDark(!isDark)} className={`p-1.5 rounded-lg border ${theme.bgCard} hover:text-blue-500 transition`}>
             {isDark ? <Sun size={14} className="sm:w-4 sm:h-4" /> : <Moon size={14} className="sm:w-4 sm:h-4" />}
           </button>
         </div>
-
       </header>
 
-      {/* AREA KONTEN UTAMA */}
       <div className="flex flex-1 overflow-hidden relative w-full">
         
-        {/* TAMPILAN 1: DASHBOARD / ABOUT */}
         {activeTab === 'dashboard' && (
           <div className={`flex-1 overflow-y-auto ${theme.bgApp} p-4 sm:p-8 md:p-16 flex flex-col items-center animate-in fade-in duration-500 w-full`}>
             <div className="max-w-4xl w-full text-center mb-10 sm:mb-16">
@@ -219,30 +203,56 @@ export default function App() {
               <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold mb-3 sm:mb-4">{t.aboutTitle}</h1>
               <p className={`text-sm sm:text-xl ${theme.textMuted}`}>{t.aboutSub}</p>
               
-              <div className={`mt-6 sm:mt-12 p-4 sm:p-8 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-xl border border-slate-100 dark:border-slate-700 text-left leading-relaxed text-xs sm:text-base md:text-lg max-w-full overflow-hidden`}>
+              <div className={`mt-6 sm:mt-12 p-4 sm:p-8 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-xl border border-slate-100 dark:border-slate-700 text-center sm:text-left leading-relaxed text-xs sm:text-base md:text-lg max-w-full overflow-hidden`}>
                 <p className="break-words">{t.aboutDesc}</p>
               </div>
             </div>
 
-            <div className="max-w-5xl w-full mb-8">
-              <h2 className="text-lg sm:text-2xl font-bold mb-6 sm:mb-8 text-center">Key Features</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 w-full">
-                <div className={`p-4 sm:p-6 rounded-xl border flex items-center gap-3 sm:gap-4 shadow-sm ${theme.bgCard}`}><Activity className="text-cyan-500 shrink-0" size={24} /><span className="font-semibold text-xs sm:text-base">{t.feat1}</span></div>
-                <div className={`p-4 sm:p-6 rounded-xl border flex items-center gap-3 sm:gap-4 shadow-sm ${theme.bgCard}`}><LayoutDashboard className="text-cyan-500 shrink-0" size={24} /><span className="font-semibold text-xs sm:text-base">{t.feat2}</span></div>
-                <div className={`p-4 sm:p-6 rounded-xl border flex items-center gap-3 sm:gap-4 shadow-sm ${theme.bgCard}`}><Filter className="text-cyan-500 shrink-0" size={24} /><span className="font-semibold text-xs sm:text-base">{t.feat3}</span></div>
-                <div className={`p-4 sm:p-6 rounded-xl border flex items-center gap-3 sm:gap-4 shadow-sm ${theme.bgCard}`}><MapPin className="text-cyan-500 shrink-0" size={24} /><span className="font-semibold text-xs sm:text-base">{t.feat4}</span></div>
-                <div className={`p-4 sm:p-6 rounded-xl border flex items-center gap-3 sm:gap-4 shadow-sm ${theme.bgCard}`}><FileText className="text-cyan-500 shrink-0" size={24} /><span className="font-semibold text-xs sm:text-base">{t.feat5}</span></div>
-                <div className={`p-4 sm:p-6 rounded-xl border flex items-center gap-3 sm:gap-4 shadow-sm ${theme.bgCard}`}><ShieldAlert className="text-cyan-500 shrink-0" size={24} /><span className="font-semibold text-xs sm:text-base">{t.feat6}</span></div>
+            {/* CONTACT US SECTION */}
+            <div className="max-w-4xl w-full mb-12">
+              <h2 className="text-lg sm:text-2xl font-bold mb-6 sm:mb-8 text-center">{t.contactUs}</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 w-full">
+                
+                {/* Email Card */}
+                <a href="mailto:registerundip@gmail.com" className={`p-4 sm:p-6 rounded-xl border flex flex-col items-center justify-center gap-3 text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all hover:border-blue-500 ${theme.bgCard}`}>
+                  <div className="bg-blue-100 dark:bg-blue-900/50 p-3 sm:p-4 rounded-full text-blue-600">
+                    <Mail size={24} className="sm:w-8 sm:h-8" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm sm:text-base">Email</h3>
+                    <p className={`text-xs sm:text-sm mt-1 break-all ${theme.textMuted}`}>registerundip@gmail.com</p>
+                  </div>
+                </a>
+
+                {/* Instagram Card */}
+                <a href="https://instagram.com/register_undip" target="_blank" rel="noreferrer" className={`p-4 sm:p-6 rounded-xl border flex flex-col items-center justify-center gap-3 text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all hover:border-pink-500 ${theme.bgCard}`}>
+                  <div className="bg-pink-100 dark:bg-pink-900/50 p-3 sm:p-4 rounded-full text-pink-600">
+                    <Instagram size={24} className="sm:w-8 sm:h-8" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm sm:text-base">Instagram</h3>
+                    <p className={`text-xs sm:text-sm mt-1 ${theme.textMuted}`}>@register_undip</p>
+                  </div>
+                </a>
+
+                {/* WhatsApp Card */}
+                <a href="https://wa.me/6283865131284" target="_blank" rel="noreferrer" className={`p-4 sm:p-6 rounded-xl border flex flex-col items-center justify-center gap-3 text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all hover:border-green-500 ${theme.bgCard}`}>
+                  <div className="bg-green-100 dark:bg-green-900/50 p-3 sm:p-4 rounded-full text-green-600">
+                    <MessageCircle size={24} className="sm:w-8 sm:h-8" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm sm:text-base">WhatsApp</h3>
+                    <p className={`text-xs sm:text-sm mt-1 ${theme.textMuted}`}>083865131284 (Dava)</p>
+                  </div>
+                </a>
+
               </div>
             </div>
           </div>
         )}
 
-        {/* TAMPILAN 2: PETA (STATIONS) */}
         {activeTab === 'stations' && (
           <div className="flex flex-1 w-full relative animate-in fade-in zoom-in-95 duration-300">
-            
-            {/* Backdrop Gelap saat Sidebar Terbuka di Mobile */}
             {isSidebarOpen && (
               <div 
                 onClick={() => setIsSidebarOpen(false)} 
@@ -250,7 +260,6 @@ export default function App() {
               />
             )}
 
-            {/* Sidebar Peta */}
             <aside className={`fixed md:relative inset-y-0 left-0 z-[2000] md:z-[999] w-72 sm:w-80 flex flex-col shadow-2xl md:shadow-xl shrink-0 transition-all duration-300 ${isSidebarOpen ? 'translate-x-0 ml-0' : '-translate-x-full md:-ml-80'} ${theme.bgSidebar}`}>
               <div className={`p-4 sm:p-6 border-b flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                 <div className="flex items-center gap-2">
@@ -277,7 +286,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 2. Login pindah ke bagian bawah sidebar */}
               <div className={`p-4 sm:p-6 border-t ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50/80 border-slate-200'}`}>
                 <div className="flex flex-col gap-3">
                   <div className={`flex items-center justify-center gap-2 text-xs sm:text-sm font-medium py-2.5 sm:py-3 px-3 rounded-xl border shadow-sm ${theme.bgCard}`}>
@@ -303,7 +311,6 @@ export default function App() {
               </div>
             </aside>
 
-            {/* Area Peta */}
             <div className="flex-1 relative z-0 h-full w-full">
               <button 
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
@@ -345,7 +352,6 @@ export default function App() {
         )}
       </div>
 
-      {/* MODAL: LOGIN ADMIN */}
       {isLoginModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[3000] flex items-center justify-center p-4">
           <div className={`${theme.bgCard} rounded-2xl w-full max-w-sm shadow-2xl p-5 sm:p-6 border ${isDark ? 'border-slate-700' : 'border-white'}`}>
@@ -368,7 +374,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: TAMBAH DATA */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[3000] flex items-center justify-center p-3 sm:p-4">
           <div className={`${theme.bgCard} rounded-2xl w-full max-w-lg shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto border ${isDark ? 'border-slate-700' : 'border-white'}`}>
@@ -402,7 +407,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: METADATA */}
       {modalData && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[4000] flex items-center justify-center p-4">
           <div className={`${theme.bgCard} rounded-2xl w-full max-w-lg shadow-2xl p-5 sm:p-6 border ${isDark ? 'border-slate-700' : 'border-white'}`}>
