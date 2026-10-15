@@ -37,7 +37,7 @@ const dict = {
   id: {
     title: "Register Geoportal (Re-Port)", dashboard: "Dasbor", stations: "Stasiun Peta",
     adminLogin: "Login Admin", logout: "Keluar", addData: "Tambah Data",
-    aboutTitle: "Tentang Register Geoportal (Re-Port)", aboutSub: "Platform Pemantauan Oseanografi Interaktif",
+    aboutTitle: "Tentang Register Geoportal (Re-Port)",
     aboutDesc: "Register Geoportal (Re-port) merupakan sebuah portal yang memuat data mengenai informasi geospasial kelautan yang dirancang oleh Register Undip sebagai bahan pembelajaran dan edukasi mahasiswa mengenai penginderaan jauh dan sistem informasi geografi dalam lingkup kelautan. Geoportal ini mengatur dan menyediakan layanan, pencarian, dan akses untuk informasi geospasial kelautan. Geoportal memiliki fungsi penerbitan data oleh penyedia layanan, pencarian dan penemuan informasi oleh pengguna dan akses ke informasi geospasial dalam ruang lingkup kelautan.",
     feat1: "Integrasi Data Lapangan", feat2: "Manajemen Stasiun Dinamis", feat3: "Pemfilteran Kategori Peta",
     feat4: "Analisis Geospasial", feat5: "Ekstraksi Foto GDrive", feat6: "Keamanan Akses Admin",
