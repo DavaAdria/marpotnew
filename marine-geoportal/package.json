@@ -18,6 +18,9 @@
     "vite": "^8.2.0"
   },
   "dependencies": {
+    "lucide-brands": "latest",
+    "lucide-react": "^...",
+    "react": "^...",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "leaflet": "^1.9.4",
