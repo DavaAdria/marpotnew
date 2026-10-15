@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from 'react-leaflet';
+// Ikon Instagram DICABUT DARI SINI karena sudah dihapus oleh pihak Lucide v1.0
 import { 
   Filter, Database, X, Check, Menu, Plus, LogOut, User, 
-  Globe, Moon, Sun, Droplet, Mail, Instagram, MessageCircle
+  Globe, Moon, Sun, Droplet, Mail, MessageCircle
 } from 'lucide-react'; 
+// Dan dipindahkan ke SINI menggunakan lucide-brands
+import { Instagram } from 'lucide-brands';
+
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -158,9 +162,9 @@ export default function App() {
       <header className={`${theme.bgNav} border-b px-3 sm:px-6 py-2.5 sm:py-4 flex flex-col md:flex-row gap-2 md:gap-0 justify-between items-center z-[1000] shadow-sm w-full shrink-0`}>
         <div className="flex flex-col sm:flex-row items-center w-full md:w-auto gap-3 sm:gap-6">
           <div className="flex items-center gap-2 shrink-0">
-            <div className="bg-blue-600 p-1.5 sm:p-2 rounded-xl text-white shadow-md shadow-blue-500/30">
-              <Droplet size={18} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
-            </div>
+            {/* GAMBAR LOGO KUSTOM */}
+            {/* Pastikan file logo.png milikmu sudah diletakkan di dalam folder `public` */}
+            <img src="/logo.png" alt="Register Undip Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
             <h1 className="text-base sm:text-xl md:text-2xl font-extrabold tracking-tight text-blue-600 truncate max-w-[140px] xs:max-w-[180px] sm:max-w-none">
               {t.title}
             </h1>
@@ -197,9 +201,13 @@ export default function App() {
         {activeTab === 'dashboard' && (
           <div className={`flex-1 overflow-y-auto ${theme.bgApp} p-4 sm:p-8 md:p-16 flex flex-col items-center animate-in fade-in duration-500 w-full`}>
             <div className="max-w-4xl w-full text-center mb-10 sm:mb-16">
-              <div className="inline-flex items-center justify-center p-3 sm:p-4 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-4 sm:mb-6 text-blue-600">
-                <Droplet size={36} className="sm:w-12 sm:h-12" strokeWidth={2} />
+              
+              {/* GAMBAR LOGO KUSTOM DI HALAMAN TENTANG */}
+              {/* Pastikan file logo.png milikmu sudah diletakkan di dalam folder `public` */}
+              <div className="inline-flex items-center justify-center mb-4 sm:mb-6">
+                 <img src="/logo.png" alt="Register Undip Logo Large" className="w-20 h-20 sm:w-28 sm:h-28 object-contain opacity-90 drop-shadow-lg" />
               </div>
+
               <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold mb-3 sm:mb-4">{t.aboutTitle}</h1>
               <p className={`text-sm sm:text-xl ${theme.textMuted}`}>{t.aboutSub}</p>
               
