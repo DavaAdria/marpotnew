@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// 1. Perhatikan kita menambahkan impor ZoomControl di baris ini:
-import { MapContainer, TileLayer, Marker, Popup, ZoomControl } from 'react-leaflet';
+// 1. Tambahkan useMap di sini
+import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from 'react-leaflet';
 import { 
   Map as MapIcon, Filter, Database, X, Check, Menu, Plus, Lock, LogOut, User, 
   Globe, Moon, Sun, Droplet, Activity, FileText, LayoutDashboard, MapPin, ShieldAlert
@@ -14,6 +14,19 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+// 2. Komponen pintar pendeteksi perubahan ukuran layar agar tak ada sisi kosong
+function MapResizer({ isSidebarOpen }) {
+  const map = useMap();
+  useEffect(() => {
+    // Karena animasi sidebar kita 300ms, kita suruh leaflet ukur ulang setelah 300ms
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [map, isSidebarOpen]);
+  return null;
+}
 
 const categories = ["Ecology", "Chemistry", "Oceanography", "Meteorology"];
 
@@ -141,7 +154,6 @@ export default function App() {
   return (
     <div className={`flex flex-col h-screen font-sans transition-colors duration-300 ${theme.bgApp} ${theme.textMain}`}>
       
-      {/* NAVBAR */}
       <header className={`${theme.bgNav} border-b px-6 py-4 flex justify-between items-center z-[1000] shadow-sm`}>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
@@ -195,10 +207,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* AREA KONTEN UTAMA */}
       <div className="flex flex-1 overflow-hidden relative">
         
-        {/* TAMPILAN 1: DASHBOARD / ABOUT */}
         {activeTab === 'dashboard' && (
           <div className={`flex-1 overflow-y-auto ${theme.bgApp} p-8 md:p-16 flex flex-col items-center animate-in fade-in duration-500`}>
             <div className="max-w-4xl w-full text-center mb-16">
@@ -227,10 +237,8 @@ export default function App() {
           </div>
         )}
 
-        {/* TAMPILAN 2: PETA (STATIONS) */}
         {activeTab === 'stations' && (
           <div className="flex flex-1 w-full relative animate-in fade-in zoom-in-95 duration-300">
-            {/* Sidebar Peta */}
             <aside className={`w-80 flex flex-col z-[999] shadow-xl shrink-0 transition-all duration-300 ${isSidebarOpen ? 'ml-0' : '-ml-80'} ${theme.bgSidebar}`}>
               <div className={`p-6 border-b flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                 <div className="flex items-center gap-2">
@@ -265,20 +273,20 @@ export default function App() {
               </div>
             </aside>
 
-            {/* Area Peta Lfeflet */}
             <div className="flex-1 relative z-0">
               <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`absolute top-4 left-4 z-[999] p-2 rounded-lg shadow-lg border focus:outline-none transition-all ${theme.bgCard} hover:text-blue-500`}>
                 <Menu size={24} />
               </button>
               
-              {/* 2. PENAMBAHAN 'zoomControl={false}' DI SINI */}
               <MapContainer 
                 center={[-6.6, 110.5]} 
                 zoom={9} 
                 zoomControl={false} 
                 style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}
               >
-                {/* 3. PEMINDAHAN ZOOM KE SUDUT KANAN BAWAH */}
+                {/* 3. Masukkan MapResizer di dalam MapContainer */}
+                <MapResizer isSidebarOpen={isSidebarOpen} />
+                
                 <ZoomControl position="bottomright" />
                 <TileLayer attribution='&copy; Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                 
@@ -304,7 +312,6 @@ export default function App() {
         )}
       </div>
 
-      {/* MODAL: LOGIN ADMIN */}
       {isLoginModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[3000] flex items-center justify-center p-4">
           <div className={`${theme.bgCard} rounded-2xl w-full max-w-sm shadow-2xl p-6 border ${isDark ? 'border-slate-700' : 'border-white'}`}>
@@ -327,7 +334,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: TAMBAH DATA */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[3000] flex items-center justify-center p-4">
           <div className={`${theme.bgCard} rounded-2xl w-full max-w-lg shadow-2xl p-6 max-h-[90vh] overflow-y-auto border ${isDark ? 'border-slate-700' : 'border-white'}`}>
@@ -361,7 +367,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: DETAIL METADATA */}
       {modalData && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[4000] flex items-center justify-center p-4">
           <div className={`${theme.bgCard} rounded-2xl w-full max-w-lg shadow-2xl p-6 border ${isDark ? 'border-slate-700' : 'border-white'}`}>
