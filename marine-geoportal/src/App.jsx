@@ -164,7 +164,7 @@ export default function App() {
           <div className="flex items-center gap-2 shrink-0">
             {/* GAMBAR LOGO KUSTOM */}
             {/* Pastikan file logo.png milikmu sudah diletakkan di dalam folder `public` */}
-            <img src="/logo.png" alt="Register Undip Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
+            <img src="/marpot_logo.png" alt="Marpot Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
             <h1 className="text-base sm:text-xl md:text-2xl font-extrabold tracking-tight text-blue-600 truncate max-w-[140px] xs:max-w-[180px] sm:max-w-none">
               {t.title}
             </h1>
@@ -205,7 +205,7 @@ export default function App() {
               {/* GAMBAR LOGO KUSTOM DI HALAMAN TENTANG */}
               {/* Pastikan file logo.png milikmu sudah diletakkan di dalam folder `public` */}
               <div className="inline-flex items-center justify-center mb-4 sm:mb-6">
-                 <img src="/logo.png" alt="Register Undip Logo Large" className="w-20 h-20 sm:w-28 sm:h-28 object-contain opacity-90 drop-shadow-lg" />
+                 <img src="/marpot_logo.png" alt="Register Undip Logo Large" className="w-20 h-20 sm:w-28 sm:h-28 object-contain opacity-90 drop-shadow-lg" />
               </div>
 
               <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold mb-3 sm:mb-4">{t.aboutTitle}</h1>
