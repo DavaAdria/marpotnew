@@ -59,7 +59,7 @@ export default function App() {
   const handleLogin = (e) => {
     e.preventDefault();
     // Kredensial Admin Sementara (Bisa kamu ubah sendiri)
-    if (loginForm.username === 'admin' && loginForm.password === 'algomarine') {
+    if (loginForm.username === 'admin' && loginForm.password === 'dbase') {
       setIsAdmin(true);
       setIsLoginModalOpen(false);
       setLoginForm({ username: '', password: '' }); // Bersihkan form
