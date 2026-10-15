@@ -14,7 +14,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Komponen Otomatis Ukur Ulang Peta Saat Resize/Toggle Sidebar
 function MapResizer({ isSidebarOpen }) {
   const map = useMap();
   useEffect(() => {
@@ -37,7 +36,7 @@ const initialData = [
 const dict = {
   id: {
     title: "Marine Geoportal", dashboard: "Dasbor", stations: "Stasiun Peta",
-    adminLogin: "Login Admin", logout: "Keluar", addData: "Tambah",
+    adminLogin: "Login Admin", logout: "Keluar", addData: "Tambah Data",
     aboutTitle: "Tentang Marine Geoportal", aboutSub: "Platform Pemantauan Oseanografi Interaktif",
     aboutDesc: "Marine Geoportal adalah sistem pemantauan kelautan mutakhir yang mengintegrasikan data lapangan dan analisis geospasial secara real-time. Dilengkapi dengan manajemen stasiun dinamis, visualisasi pemetaan, dan sistem inventaris aset untuk mendukung riset pesisir dan pelestarian lingkungan laut.",
     feat1: "Integrasi Data Lapangan", feat2: "Manajemen Stasiun Dinamis", feat3: "Pemfilteran Kategori Peta",
@@ -77,7 +76,10 @@ export default function App() {
 
   const [activeFilters, setActiveFilters] = useState(categories);
   const [modalData, setModalData] = useState(null);
+  
+  // 3. Perilaku Sidebar: Sekarang defaultnya selalu FALSE (tertutup) saat pindah menu, bahkan di desktop
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
   const [stations, setStations] = useState([]);
   
   const [isAdmin, setIsAdmin] = useState(false);
@@ -90,13 +92,18 @@ export default function App() {
   });
 
   useEffect(() => {
-    if (window.innerWidth >= 768) {
-      setIsSidebarOpen(true);
-    }
+    // Kita hapus kode yang membuka sidebar otomatis di desktop
     const savedStations = localStorage.getItem('marineGeoportalData');
     if (savedStations) setStations(JSON.parse(savedStations));
     else { setStations(initialData); localStorage.setItem('marineGeoportalData', JSON.stringify(initialData)); }
   }, []);
+
+  // Saat berpindah tab ke 'stations', pastikan sidebar tertutup
+  useEffect(() => {
+    if (activeTab === 'stations') {
+      setIsSidebarOpen(false);
+    }
+  }, [activeTab]);
 
   const toggleFilter = (category) => {
     setActiveFilters(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
@@ -155,11 +162,11 @@ export default function App() {
   return (
     <div className={`flex flex-col h-screen w-screen overflow-x-hidden font-sans transition-colors duration-300 ${theme.bgApp} ${theme.textMain}`}>
       
-      {/* NAVBAR DENGAN LAYOUT MOBILE DUA BARIS AGAR TIDAK BERTABRAKAN */}
+      {/* NAVBAR REVISI SESUAI INSTRUKSI */}
       <header className={`${theme.bgNav} border-b px-3 sm:px-6 py-2.5 sm:py-4 flex flex-col md:flex-row gap-2 md:gap-0 justify-between items-center z-[1000] shadow-sm w-full shrink-0`}>
         
-        {/* Baris 1: Logo & Kontrol Akses Kanan */}
-        <div className="flex items-center justify-between w-full md:w-auto gap-2">
+        {/* 1. Kiri: Logo + Menu Dashboard & Peta berjejer */}
+        <div className="flex flex-col sm:flex-row items-center w-full md:w-auto gap-3 sm:gap-6">
           <div className="flex items-center gap-2 shrink-0">
             <div className="bg-blue-600 p-1.5 sm:p-2 rounded-xl text-white shadow-md shadow-blue-500/30">
               <Droplet size={18} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
@@ -169,68 +176,37 @@ export default function App() {
             </h1>
           </div>
 
-          {/* Akses Kanan (Bahasa, DarkMode, Admin) */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-            <button onClick={() => setLang(lang === 'id' ? 'en' : 'id')} className={`flex items-center gap-1 px-2 py-1 rounded-lg border font-bold text-xs sm:text-sm ${theme.bgCard} hover:border-blue-500 transition`}>
-              <Globe size={13} className="sm:w-4 sm:h-4" /> {lang.toUpperCase()}
+          {/* Menu Tab Switcher (sekarang berada di sebelah judul pada desktop) */}
+          <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-bold justify-center gap-1 w-full sm:w-auto">
+            <button 
+              onClick={() => setActiveTab('dashboard')}
+              className={`px-4 sm:px-6 py-1.5 rounded-lg transition text-center ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-sm' : theme.textMuted}`}
+            >
+              {t.dashboard}
             </button>
-            
-            <button onClick={() => setIsDark(!isDark)} className={`p-1.5 rounded-lg border ${theme.bgCard} hover:text-blue-500 transition`}>
-              {isDark ? <Sun size={14} className="sm:w-4 sm:h-4" /> : <Moon size={14} className="sm:w-4 sm:h-4" />}
+            <button 
+              onClick={() => setActiveTab('stations')}
+              className={`px-4 sm:px-6 py-1.5 rounded-lg transition text-center ${activeTab === 'stations' ? 'bg-blue-600 text-white shadow-sm' : theme.textMuted}`}
+            >
+              {t.stations}
             </button>
-            
-            {isAdmin ? (
-              <div className="flex items-center gap-1">
-                <button onClick={() => setIsAddModalOpen(true)} className="bg-cyan-500 hover:bg-cyan-600 text-white px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition text-xs sm:text-sm">
-                  <Plus size={14} /> <span className="hidden sm:inline">{t.addData}</span>
-                </button>
-                <button onClick={handleLogout} className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/50 p-1.5 rounded-lg font-bold transition">
-                  <LogOut size={14} />
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setIsLoginModalOpen(true)} className="bg-cyan-500 hover:bg-cyan-600 text-white px-2.5 py-1 sm:px-4 sm:py-2 rounded-lg font-bold flex items-center gap-1 transition shadow-sm text-xs sm:text-sm whitespace-nowrap">
-                <User size={14} className="sm:w-4 sm:h-4" /> <span>{t.adminLogin}</span>
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Baris 2 Khusus Mobile: Tab Switcher Paling Rapi */}
-        <div className="flex md:hidden w-full bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-bold justify-center gap-1 mt-1">
-          <button 
-            onClick={() => setActiveTab('dashboard')}
-            className={`flex-1 py-1.5 rounded-lg transition text-center ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-sm' : theme.textMuted}`}
-          >
-            {t.dashboard}
+        {/* 1. Kanan: Hanya Lang Switch & Dark Mode */}
+        <div className="flex items-center justify-end w-full md:w-auto gap-1.5 sm:gap-3 text-xs sm:text-sm mt-2 sm:mt-0">
+          <button onClick={() => setLang(lang === 'id' ? 'en' : 'id')} className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-bold text-xs sm:text-sm ${theme.bgCard} hover:border-blue-500 transition`}>
+            <Globe size={13} className="sm:w-4 sm:h-4" /> {lang.toUpperCase()}
           </button>
-          <button 
-            onClick={() => setActiveTab('stations')}
-            className={`flex-1 py-1.5 rounded-lg transition text-center ${activeTab === 'stations' ? 'bg-blue-600 text-white shadow-sm' : theme.textMuted}`}
-          >
-            {t.stations}
+          
+          <button onClick={() => setIsDark(!isDark)} className={`p-1.5 rounded-lg border ${theme.bgCard} hover:text-blue-500 transition`}>
+            {isDark ? <Sun size={14} className="sm:w-4 sm:h-4" /> : <Moon size={14} className="sm:w-4 sm:h-4" />}
           </button>
         </div>
 
-        {/* Tab Switcher Desktop */}
-        <nav className="hidden md:flex gap-2">
-          <button 
-            onClick={() => setActiveTab('dashboard')}
-            className={`px-4 py-2 rounded-lg font-semibold transition text-sm ${activeTab === 'dashboard' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : `${theme.textMuted} hover:bg-slate-100 dark:hover:bg-slate-800`}`}
-          >
-            {t.dashboard}
-          </button>
-          <button 
-            onClick={() => setActiveTab('stations')}
-            className={`px-4 py-2 rounded-lg font-semibold transition text-sm ${activeTab === 'stations' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : `${theme.textMuted} hover:bg-slate-100 dark:hover:bg-slate-800`}`}
-          >
-            {t.stations}
-          </button>
-        </nav>
-
       </header>
 
-      {/* AREA KONTEN UTAMA (DIBATASI MENGURANGI OVERFLOW) */}
+      {/* AREA KONTEN UTAMA */}
       <div className="flex flex-1 overflow-hidden relative w-full">
         
         {/* TAMPILAN 1: DASHBOARD / ABOUT */}
@@ -275,7 +251,7 @@ export default function App() {
             )}
 
             {/* Sidebar Peta */}
-            <aside className={`fixed md:relative inset-y-0 left-0 z-[2000] md:z-[999] w-72 sm:w-80 flex flex-col shadow-2xl md:shadow-xl shrink-0 transition-all duration-300 ${isSidebarOpen ? 'translate-x-0 ml-0' : '-translate-x-full md:translate-x-0 md:-ml-80'} ${theme.bgSidebar}`}>
+            <aside className={`fixed md:relative inset-y-0 left-0 z-[2000] md:z-[999] w-72 sm:w-80 flex flex-col shadow-2xl md:shadow-xl shrink-0 transition-all duration-300 ${isSidebarOpen ? 'translate-x-0 ml-0' : '-translate-x-full md:-ml-80'} ${theme.bgSidebar}`}>
               <div className={`p-4 sm:p-6 border-b flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                 <div className="flex items-center gap-2">
                   <Filter size={20} className="text-blue-500" />
@@ -286,7 +262,7 @@ export default function App() {
               
               <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
                 <p className={`text-xs font-bold uppercase tracking-wider mb-4 ${theme.textMuted}`}>{t.mapCategory}</p>
-                <div className="flex flex-col gap-2.5 sm:gap-3">
+                <div className="flex flex-col gap-2.5 sm:gap-3 mb-6">
                   {categories.map(cat => {
                     const isActive = activeFilters.includes(cat);
                     return (
@@ -301,10 +277,28 @@ export default function App() {
                 </div>
               </div>
 
+              {/* 2. Login pindah ke bagian bawah sidebar */}
               <div className={`p-4 sm:p-6 border-t ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50/80 border-slate-200'}`}>
-                <div className={`flex items-center justify-center gap-2 text-xs sm:text-sm font-medium py-2.5 sm:py-3 px-3 rounded-xl border shadow-sm ${theme.bgCard}`}>
-                  <Database size={16} className="text-blue-500" />
-                  <span>{t.showing} <strong>{filteredData.length}</strong> {t.activeSpots}</span>
+                <div className="flex flex-col gap-3">
+                  <div className={`flex items-center justify-center gap-2 text-xs sm:text-sm font-medium py-2.5 sm:py-3 px-3 rounded-xl border shadow-sm ${theme.bgCard}`}>
+                    <Database size={16} className="text-blue-500" />
+                    <span>{t.showing} <strong>{filteredData.length}</strong> {t.activeSpots}</span>
+                  </div>
+                  
+                  {isAdmin ? (
+                    <div className="flex flex-col gap-2">
+                      <button onClick={() => setIsAddModalOpen(true)} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition text-sm">
+                        <Plus size={16} /> {t.addData}
+                      </button>
+                      <button onClick={handleLogout} className="w-full bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/50 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition text-sm">
+                        <LogOut size={16} /> {t.logout}
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setIsLoginModalOpen(true)} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition shadow-sm text-sm">
+                      <User size={16} /> {t.adminLogin}
+                    </button>
+                  )}
                 </div>
               </div>
             </aside>
