@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+// 1. Perhatikan kita menambahkan impor ZoomControl di baris ini:
+import { MapContainer, TileLayer, Marker, Popup, ZoomControl } from 'react-leaflet';
 import { 
   Map as MapIcon, Filter, Database, X, Check, Menu, Plus, Lock, LogOut, User, 
-  Globe, Moon, Sun, Droplet, Activity, FileText, LayoutDashboard, MapPin, ShieldAlert, Download
+  Globe, Moon, Sun, Droplet, Activity, FileText, LayoutDashboard, MapPin, ShieldAlert
 } from 'lucide-react'; 
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -22,7 +23,6 @@ const initialData = [
   { id: 3, name: "Stasiun Pemantauan SST", lat: -6.8147, lng: 110.4150, category: "Meteorology", status: "Live", imageUrl: "https://images.unsplash.com/photo-1620210214811-137b2d19275e?w=400&q=80", description: "Stasiun pengukur Sea Surface Temperature.", owner: "Divisi Operasional", method: "Sensor Pelampung" }
 ];
 
-// KAMUS BAHASA
 const dict = {
   id: {
     title: "Marine Geoportal", dashboard: "Dasbor / Tentang", stations: "Stasiun Peta",
@@ -59,7 +59,7 @@ const dict = {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' atau 'stations'
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [isDark, setIsDark] = useState(false);
   const [lang, setLang] = useState('id');
   const t = dict[lang];
@@ -124,11 +124,10 @@ export default function App() {
     
     setIsAddModalOpen(false);
     setFormData({ name: '', lat: '', lng: '', category: 'Oceanography', owner: '', description: '', method: 'Sensor Lapangan', status: 'Aktif', imageUrl: '' });
-    setActiveTab('stations'); // Otomatis pindah ke map setelah input
+    setActiveTab('stations');
     alert(t.saveSuccess);
   };
 
-  // Tema Warna Dinamis
   const theme = {
     bgApp: isDark ? 'bg-slate-900' : 'bg-slate-50',
     textMain: isDark ? 'text-slate-100' : 'text-slate-800',
@@ -152,7 +151,6 @@ export default function App() {
             <h1 className="text-2xl font-extrabold tracking-tight text-blue-600">{t.title}</h1>
           </div>
           
-          {/* Navigasi Tengah */}
           <nav className="hidden md:flex gap-2 ml-8">
             <button 
               onClick={() => setActiveTab('dashboard')}
@@ -169,15 +167,11 @@ export default function App() {
           </nav>
         </div>
         
-        {/* Kontrol Kanan (Bahasa, Tema, Login) */}
         <div className="flex items-center gap-4">
-          
-          {/* Bahasa Toggle */}
           <button onClick={() => setLang(lang === 'id' ? 'en' : 'id')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border font-bold text-sm ${theme.bgCard} hover:border-blue-500 transition`}>
             <Globe size={16} /> {lang.toUpperCase()}
           </button>
           
-          {/* Dark Mode Toggle */}
           <button onClick={() => setIsDark(!isDark)} className={`p-2 rounded-full border ${theme.bgCard} hover:text-blue-500 transition`}>
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
@@ -273,12 +267,19 @@ export default function App() {
 
             {/* Area Peta Lfeflet */}
             <div className="flex-1 relative z-0">
-              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`absolute top-4 left-4 z-[999] p-2 rounded-lg shadow-lg border focus:outline-none ${theme.bgCard} hover:text-blue-500`}>
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`absolute top-4 left-4 z-[999] p-2 rounded-lg shadow-lg border focus:outline-none transition-all ${theme.bgCard} hover:text-blue-500`}>
                 <Menu size={24} />
               </button>
               
-              <MapContainer center={[-6.6, 110.5]} zoom={9} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}>
-                {/* Tile Layer mengikuti tema - Esri Imagery tetap bagus di dark mode, tapi base peta berubah */}
+              {/* 2. PENAMBAHAN 'zoomControl={false}' DI SINI */}
+              <MapContainer 
+                center={[-6.6, 110.5]} 
+                zoom={9} 
+                zoomControl={false} 
+                style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}
+              >
+                {/* 3. PEMINDAHAN ZOOM KE SUDUT KANAN BAWAH */}
+                <ZoomControl position="bottomright" />
                 <TileLayer attribution='&copy; Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                 
                 {filteredData.map(data => (
@@ -326,7 +327,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: TAMBAH DATA (Diperbarui tampilannya) */}
+      {/* MODAL: TAMBAH DATA */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[3000] flex items-center justify-center p-4">
           <div className={`${theme.bgCard} rounded-2xl w-full max-w-lg shadow-2xl p-6 max-h-[90vh] overflow-y-auto border ${isDark ? 'border-slate-700' : 'border-white'}`}>
@@ -379,7 +380,6 @@ export default function App() {
         </div>
       )}
       
-      {/* Tambahan CSS khusus agar Popup Leaflet mengikuti Dark Mode */}
       <style dangerouslySetInnerHTML={{__html: `
         .dark-popup .leaflet-popup-content-wrapper, .dark-popup .leaflet-popup-tip {
           background-color: #1e293b !important;
