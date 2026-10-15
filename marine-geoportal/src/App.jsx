@@ -115,7 +115,7 @@ export default function App() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (loginForm.username === 'admin' && loginForm.password === 'algomarine') {
+    if (loginForm.username === 'admin' && loginForm.password === 'dbase') {
       setIsAdmin(true); setIsLoginModalOpen(false); setLoginForm({ username: '', password: '' });
       alert(t.loginSuccess);
     } else {
