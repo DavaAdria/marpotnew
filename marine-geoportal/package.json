@@ -20,6 +20,7 @@
   "dependencies": {
     "lucide-brands": "latest",
     "lucide-react": "^...",
+    "mongoose": "^8.0.0",
     "react": "^...",
     "cors": "^2.8.6",
     "express": "^5.2.1",
