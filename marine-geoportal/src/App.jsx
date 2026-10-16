@@ -101,14 +101,32 @@ export default function App() {
     name: '', lat: '', lng: '', category: 'Oceanography', owner: '', description: '', method: 'Sensor Lapangan', status: 'Aktif', imageUrl: ''
   });
 
+  // SISTEM PENYIMPANAN PERMANEN (Hibrid localStorage & Backend)
   useEffect(() => {
+    const savedData = localStorage.getItem('marineGeoportalData');
+    const localStations = savedData ? JSON.parse(savedData) : null;
+
     fetch('https://report-backend.vercel.app/api/stations')
       .then(res => res.json())
       .then(data => {
-        if (data && data.length > 0) setStations(data);
-        else setStations(initialData);
+        if (data && data.length > 0) {
+          setStations(data);
+          localStorage.setItem('marineGeoportalData', JSON.stringify(data));
+        } else if (localStations && localStations.length > 0) {
+          setStations(localStations);
+        } else {
+          setStations(initialData);
+          localStorage.setItem('marineGeoportalData', JSON.stringify(initialData));
+        }
       })
-      .catch(() => setStations(initialData));
+      .catch(() => {
+        if (localStations && localStations.length > 0) {
+          setStations(localStations);
+        } else {
+          setStations(initialData);
+          localStorage.setItem('marineGeoportalData', JSON.stringify(initialData));
+        }
+      });
   }, []);
 
   useEffect(() => {
@@ -152,20 +170,20 @@ export default function App() {
       imageUrl: processedImageUrl 
     };
 
+    // 1. Simpan ke state dan localStorage secara cepat agar tidak hilang saat direfresh
+    const updatedStations = [...stations, newStation];
+    setStations(updatedStations);
+    localStorage.setItem('marineGeoportalData', JSON.stringify(updatedStations));
+
+    // 2. Kirim juga ke server backend API jika online
     try {
-      const res = await fetch('https://report-backend.vercel.app/api/stations', {
+      await fetch('https://report-backend.vercel.app/api/stations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newStation)
       });
-      if (res.ok) {
-        const saved = await res.json();
-        setStations(prev => [...prev, saved]);
-      } else {
-        setStations(prev => [...prev, newStation]);
-      }
-    } catch {
-      setStations(prev => [...prev, newStation]);
+    } catch (err) {
+      console.log('Tersimpan lokal di browser (backend offline).', err);
     }
 
     setIsAddModalOpen(false);
@@ -279,7 +297,7 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: PETA */}
+        {/* TAB 2: PETA (DESAIN ZOOM AWAL 1 INDONESIA) */}
         {activeTab === 'stations' && (
           <div className="relative w-full h-full overflow-hidden">
             
@@ -341,7 +359,7 @@ export default function App() {
               </div>
             </aside>
 
-            {/* AREA PETA */}
+            {/* AREA PETA DENGAN TAMPILAN AWAL 1 INDONESIA */}
             <div className="w-full h-full relative z-0">
               <button 
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
@@ -352,8 +370,8 @@ export default function App() {
               </button>
               
               <MapContainer 
-                center={[-6.6, 110.5]} 
-                zoom={9} 
+                center={[-2.5, 118.0]} 
+                zoom={5} 
                 zoomControl={false} 
                 className="w-full h-full z-0"
                 style={{ width: '100%', height: '100%' }}
