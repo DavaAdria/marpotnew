@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from 'react-leaflet';
 import { 
   Filter, Database, X, Check, Menu, Plus, LogOut, User, 
-  Globe, Moon, Sun, Mail, MessageCircle, Trash2, Search, Layers, Map as MapIcon
+  Globe, Moon, Sun, Mail, MessageCircle, Trash2, Search, Layers, Send, Map as MapIcon
 } from 'lucide-react'; 
 import { Instagram } from 'lucide-brands';
 
@@ -82,7 +82,16 @@ const dict = {
     searchPlaceholder: "Cari nama data, lokasi, atau pengelola...",
     basemapTitle: "Mode Peta",
     satellitelayer: "Satelit Esri",
-    osmlayer: "OpenStreetMap"
+    osmlayer: "OpenStreetMap",
+    requestDataBtn: "Minta Akses Data Ini",
+    requestModalTitle: "Form Permintaan Akses Data Geospasial",
+    reqName: "Nama Lengkap",
+    reqInst: "Instansi / Universitas / Organisasi",
+    reqEmail: "Email Resmi",
+    reqPurpose: "Tujuan Penggunaan Data",
+    reqDataSelect: "Judul Data Peta yang Diminta",
+    sendReqWhatsapp: "Kirim via WhatsApp",
+    sendReqEmail: "Kirim via Email"
   },
   en: {
     title: "Register Geoportal (Re-Port)", dashboard: "Dashboard", stations: "Interactive Map",
@@ -104,7 +113,16 @@ const dict = {
     searchPlaceholder: "Search data name, location, or manager...",
     basemapTitle: "Map Mode",
     satellitelayer: "Esri Satellite",
-    osmlayer: "OpenStreetMap"
+    osmlayer: "OpenStreetMap",
+    requestDataBtn: "Request Access to Data",
+    requestModalTitle: "Geospatial Data Access Request Form",
+    reqName: "Full Name",
+    reqInst: "Institution / University / Organization",
+    reqEmail: "Official Email",
+    reqPurpose: "Purpose of Data Request",
+    reqDataSelect: "Requested Map Dataset Title",
+    sendReqWhatsapp: "Send via WhatsApp",
+    sendReqEmail: "Send via Email"
   }
 };
 
@@ -129,6 +147,12 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '', lat: '', lng: '', category: 'Oceanography', owner: '', description: '', method: 'Sensor Lapangan', status: 'Aktif', imageUrl: ''
+  });
+
+  // STATE UNTUK FORM REQUEST DATA (Dikembalikan)
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requestForm, setRequestForm] = useState({
+    name: '', inst: '', email: '', purpose: '', selectedData: ''
   });
 
   // PENYIMPANAN DATA (Hibrid localStorage & Backend)
@@ -188,11 +212,8 @@ export default function App() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // KREDENSIAL ADMIN: USERNAME = admin | PASSWORD = dbase
     if (loginForm.username === 'admin' && loginForm.password === 'dbase') {
-      setIsAdmin(true); 
-      setIsLoginModalOpen(false); 
-      setLoginForm({ username: '', password: '' });
+      setIsAdmin(true); setIsLoginModalOpen(false); setLoginForm({ username: '', password: '' });
       alert(t.loginSuccess);
     } else {
       alert(t.loginFail);
@@ -255,6 +276,40 @@ export default function App() {
     alert(t.deleteSuccess);
   };
 
+  // FUNGSI REQUEST DATA (Dikembalikan)
+  const openRequestModal = (dataName = '') => {
+    setRequestForm(prev => ({ ...prev, selectedData: dataName }));
+    setIsRequestModalOpen(true);
+    setModalData(null); // Tutup popup metadata agar fokus ke form
+  };
+
+  const handleSendRequestWhatsApp = (e) => {
+    e.preventDefault();
+    const text = `Halo Admin Register Undip, saya ingin mengajukan permintaan akses data geospasial kelautan:%0A%0A` +
+      `*Nama:* ${requestForm.name}%0A` +
+      `*Instansi:* ${requestForm.inst}%0A` +
+      `*Email:* ${requestForm.email}%0A` +
+      `*Data yang Diminta:* ${requestForm.selectedData}%0A` +
+      `*Tujuan Penggunaan:* ${requestForm.purpose}`;
+    
+    window.open(`https://wa.me/6283865131284?text=${text}`, '_blank');
+    setIsRequestModalOpen(false);
+  };
+
+  const handleSendRequestEmail = () => {
+    const subject = encodeURIComponent(`[Permintaan Akses Data] - ${requestForm.selectedData}`);
+    const body = encodeURIComponent(
+      `Yth. Tim Register Undip,\n\nSaya bermaksud mengajukan permintaan akses data geospasial dengan rincian:\n\n` +
+      `Nama: ${requestForm.name}\n` +
+      `Instansi: ${requestForm.inst}\n` +
+      `Email: ${requestForm.email}\n` +
+      `Data yang Diminta: ${requestForm.selectedData}\n` +
+      `Tujuan Penggunaan: ${requestForm.purpose}\n\nTerima kasih.`
+    );
+    window.open(`mailto:registerundip@gmail.com?subject=${subject}&body=${body}`, '_blank');
+    setIsRequestModalOpen(false);
+  };
+
   const theme = {
     bgApp: isDark ? 'bg-slate-950' : 'bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-100',
     textMain: isDark ? 'text-slate-100' : 'text-slate-800',
@@ -310,17 +365,13 @@ export default function App() {
         {/* TAB 1: DASBOR */}
         {activeTab === 'dashboard' && (
           <div className="relative flex-1 w-full h-full overflow-y-auto">
-            
-            {/* PETA AMBIENT BACKGROUND */}
             <div className="absolute inset-0 z-0 opacity-40 dark:opacity-25 pointer-events-none filter saturate-150">
               <MapContainer center={[-2.5, 118.0]} zoom={5} zoomControl={false} dragging={false} scrollWheelZoom={false} doubleClickZoom={false} touchZoom={false} className="w-full h-full">
                 <TileLayer attribution='&copy; Esri' url={BASEMAPS.satellite.url} />
               </MapContainer>
             </div>
 
-            {/* OVERLAY CONTENT */}
             <div className="relative z-10 p-4 sm:p-8 md:p-12 flex flex-col items-center min-h-full">
-              
               <div className="max-w-4xl w-full text-center mb-8 sm:mb-12">
                 <div className="inline-flex items-center justify-center mb-4 sm:mb-6 p-3 bg-white/80 dark:bg-slate-800/80 rounded-3xl shadow-xl border border-white dark:border-slate-700 backdrop-blur-md">
                    <img src="/logo.png" alt="Register Undip Logo Large" className="w-16 h-16 sm:w-24 sm:h-24 object-contain drop-shadow-md" />
@@ -395,8 +446,6 @@ export default function App() {
               </div>
               
               <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-5">
-                
-                {/* SEARCH BAR */}
                 <div>
                   <div className="relative flex items-center">
                     <Search size={16} className="absolute left-3 text-slate-400" />
@@ -539,6 +588,52 @@ export default function App() {
         )}
       </div>
 
+      {/* MODAL PERMINTAAN DATA */}
+      {isRequestModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[4000] flex items-center justify-center p-4">
+          <div className={`${theme.bgCard} rounded-3xl w-full max-w-lg shadow-2xl p-6 border ${isDark ? 'border-slate-800' : 'border-white'}`}>
+            <div className={`flex justify-between items-center mb-4 border-b pb-3 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+              <h2 className="font-bold text-base sm:text-lg flex items-center gap-2"><Send size={18} className="text-blue-500"/> {t.requestModalTitle}</h2>
+              <button onClick={() => setIsRequestModalOpen(false)} className="p-1 rounded-full hover:bg-red-500 hover:text-white transition"><X size={18} /></button>
+            </div>
+            
+            <form onSubmit={handleSendRequestWhatsApp} className="space-y-3.5 text-xs sm:text-sm">
+              <div>
+                <label className="block font-bold mb-1 opacity-80">{t.reqName}</label>
+                <input required type="text" value={requestForm.name} onChange={(e) => setRequestForm({...requestForm, name: e.target.value})} className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-blue-500 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="Nama Anda" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1 opacity-80">{t.reqInst}</label>
+                  <input required type="text" value={requestForm.inst} onChange={(e) => setRequestForm({...requestForm, inst: e.target.value})} className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-blue-500 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="Univ / Instansi" />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1 opacity-80">{t.reqEmail}</label>
+                  <input required type="email" value={requestForm.email} onChange={(e) => setRequestForm({...requestForm, email: e.target.value})} className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-blue-500 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="email@domain.com" />
+                </div>
+              </div>
+              <div>
+                <label className="block font-bold mb-1 opacity-80">{t.reqDataSelect}</label>
+                <input required type="text" value={requestForm.selectedData} onChange={(e) => setRequestForm({...requestForm, selectedData: e.target.value})} className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-blue-500 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} />
+              </div>
+              <div>
+                <label className="block font-bold mb-1 opacity-80">{t.reqPurpose}</label>
+                <textarea required value={requestForm.purpose} onChange={(e) => setRequestForm({...requestForm, purpose: e.target.value})} className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-blue-500 h-20 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="Tujuan skripsi, riset, tugas kuliah..." />
+              </div>
+
+              <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button type="submit" className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-md">
+                  <MessageCircle size={16} /> {t.sendReqWhatsapp}
+                </button>
+                <button type="button" onClick={handleSendRequestEmail} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-md">
+                  <Mail size={16} /> {t.sendReqEmail}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL LOGIN */}
       {isLoginModalOpen && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[3000] flex items-center justify-center p-4">
@@ -596,7 +691,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL METADATA */}
+      {/* MODAL METADATA DENGAN TOMBOL PERMINTAAN DATA */}
       {modalData && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[4000] flex items-center justify-center p-4">
           <div className={`${theme.bgCard} rounded-3xl w-full max-w-lg shadow-2xl p-6 border ${isDark ? 'border-slate-800' : 'border-white'}`}>
@@ -622,16 +717,25 @@ export default function App() {
               <div className={`grid grid-cols-3 border-b pb-2 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}><span className="opacity-70">Pengelola</span><span className="col-span-2">{modalData.owner}</span></div>
               <div className="grid grid-cols-3"><span className="opacity-70">Deskripsi</span><span className="col-span-2">{modalData.description}</span></div>
               
-              {isAdmin && (
-                <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
+                
+                {/* TOMBOL MINTA AKSES DIKEMBALIKAN */}
+                <button 
+                  onClick={() => openRequestModal(modalData.name)}
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-md"
+                >
+                  <Send size={15} /> {t.requestDataBtn}
+                </button>
+
+                {isAdmin && (
                   <button 
                     onClick={() => handleDeleteStation(modalData.id || modalData._id)} 
                     className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-md"
                   >
                     <Trash2 size={15} /> {t.deleteBtn}
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
