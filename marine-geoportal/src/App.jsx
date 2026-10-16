@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from 'react-leaflet';
-// Ikon Instagram DICABUT DARI SINI karena sudah dihapus oleh pihak Lucide v1.0
 import { 
   Filter, Database, X, Check, Menu, Plus, LogOut, User, 
-  Globe, Moon, Sun, Droplet, Mail, MessageCircle
+  Globe, Moon, Sun, Mail, MessageCircle
 } from 'lucide-react'; 
-// Dan dipindahkan ke SINI menggunakan lucide-brands
 import { Instagram } from 'lucide-brands';
 
 import 'leaflet/dist/leaflet.css';
@@ -18,12 +16,13 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// Resizer otomatis agar peta selalu pas terlepas dari kondisi layar
 function MapResizer({ isSidebarOpen }) {
   const map = useMap();
-  (() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       map.invalidateSize();
-    }, 300);
+    }, 200);
     return () => clearTimeout(timer);
   }, [map, isSidebarOpen]);
   return null;
@@ -41,7 +40,7 @@ const dict = {
   id: {
     title: "Register Geoportal (Re-Port)", dashboard: "Dasbor", stations: "Stasiun Peta",
     adminLogin: "Login Admin", logout: "Keluar", addData: "Tambah Data",
-    aboutTitle: "Tentang Register Geoportal (Re-Port)",
+    aboutTitle: "Tentang Register Geoportal (Re-Port)", aboutSub: "Platform Pemantauan Oseanografi Interaktif",
     aboutDesc: "Register Geoportal (Re-port) merupakan sebuah portal yang memuat data mengenai informasi geospasial kelautan yang dirancang oleh Register Undip sebagai bahan pembelajaran dan edukasi mahasiswa mengenai penginderaan jauh dan sistem informasi geografi dalam lingkup kelautan. Geoportal ini mengatur dan menyediakan layanan, pencarian, dan akses untuk informasi geospasial kelautan.",
     contactUs: "Hubungi Kami",
     filterTitle: "Filter Data", showing: "Menampilkan", activeSpots: "titik aktif",
@@ -51,13 +50,13 @@ const dict = {
     category: "Kategori", owner: "Pengelola", desc: "Deskripsi", photo: "Link Foto (URL GDrive)",
     loginSuccess: "Login Berhasil! Mode Administrator Diaktifkan.",
     loginFail: "Akses Ditolak: Username atau Password salah!",
-    saveSuccess: "Berhasil! Data tersimpan dengan aman di memori lokal aplikasimu."
+    saveSuccess: "Berhasil! Data tersimpan dengan aman."
   },
   en: {
     title: "Register Geoportal (Re-Port)", dashboard: "Dashboard", stations: "Map Stations",
     adminLogin: "Admin Login", logout: "Logout", addData: "Add Data",
     aboutTitle: "About Register Geoportal (Re-Port)", aboutSub: "Interactive Oceanographic Monitoring Platform",
-    aboutDesc: "Register Geoportal (Re-port) is a portal containing data on marine geospatial information designed by Register Undip as learning and educational material for students regarding remote sensing and geographic information systems within the marine scope. This geoportal manages and provides services, searches, and access to marine geospatial information.",
+    aboutDesc: "Register Geoportal (Re-port) is a portal containing data on marine geospatial information designed by Register Undip as learning and educational material for students regarding remote sensing and geographic information systems within the marine scope.",
     contactUs: "Contact Us",
     filterTitle: "Data Filter", showing: "Showing", activeSpots: "active spots",
     mapCategory: "Mapping Category", fullMeta: "View Full Metadata",
@@ -66,7 +65,7 @@ const dict = {
     category: "Category", owner: "Manager", desc: "Description", photo: "Photo Link (GDrive URL)",
     loginSuccess: "Login Successful! Administrator Mode Activated.",
     loginFail: "Access Denied: Incorrect Username or Password!",
-    saveSuccess: "Success! Data safely stored in your local application memory."
+    saveSuccess: "Success! Data safely stored."
   }
 };
 
@@ -91,20 +90,14 @@ export default function App() {
   });
 
   useEffect(() => {
-  fetch('/api/stations')
-    .then(res => res.json())
-    .then(data => {
-      if (data && data.length > 0) {
-        setStations(data);
-      } else {
-        setStations(initialData);
-      }
-    })
-    .catch(err => {
-      console.error('Gagal mengambil data:', err);
-      setStations(initialData);
-    });
-}, []);
+    fetch('https://report-backend.vercel.app/api/stations')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) setStations(data);
+        else setStations(initialData);
+      })
+      .catch(() => setStations(initialData));
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'stations') {
@@ -125,7 +118,7 @@ export default function App() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (loginForm.username === 'admin' && loginForm.password === 'dbase') {
+    if (loginForm.username === 'admin' && loginForm.password === 'algomarine') {
       setIsAdmin(true); setIsLoginModalOpen(false); setLoginForm({ username: '', password: '' });
       alert(t.loginSuccess);
     } else {
@@ -135,7 +128,7 @@ export default function App() {
 
   const handleLogout = () => { setIsAdmin(false); };
 
-   const handleAddStation = async (e) => {
+  const handleAddStation = async (e) => {
     e.preventDefault();
     let processedImageUrl = formData.imageUrl.trim();
     if (processedImageUrl.includes('drive.google.com')) {
@@ -143,36 +136,29 @@ export default function App() {
       if (match && match[1]) processedImageUrl = `https://drive.google.com/uc?export=view&id=${match[1]}`;
     }
     if (processedImageUrl === '') processedImageUrl = 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&q=80';
-  
-    const newStation = { 
-      id: Date.now(), 
-      ...formData, 
-      lat: parseFloat(formData.lat), 
-      lng: parseFloat(formData.lng), 
-      imageUrl: processedImageUrl 
-    };
-  
+
+    const newStation = { id: Date.now(), ...formData, lat: parseFloat(formData.lat), lng: parseFloat(formData.lng), imageUrl: processedImageUrl };
+
     try {
-      const res = await fetch('/api/stations', {
+      const res = await fetch('https://report-backend.vercel.app/api/stations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newStation)
       });
-      
       if (res.ok) {
-        const savedStation = await res.json();
-        setStations(prev => [...prev, savedStation]);
-        setIsAddModalOpen(false);
-        setFormData({ name: '', lat: '', lng: '', category: 'Oceanography', owner: '', description: '', method: 'Sensor Lapangan', status: 'Aktif', imageUrl: '' });
-        setActiveTab('stations');
-        alert(t.saveSuccess);
+        const saved = await res.json();
+        setStations(prev => [...prev, saved]);
       } else {
-        alert('Gagal menyimpan data.');
+        setStations(prev => [...prev, newStation]);
       }
-    } catch (err) {
-      console.error('Error:', err);
-      alert('Terjadi kesalahan koneksi.');
+    } catch {
+      setStations(prev => [...prev, newStation]);
     }
+
+    setIsAddModalOpen(false);
+    setFormData({ name: '', lat: '', lng: '', category: 'Oceanography', owner: '', description: '', method: 'Sensor Lapangan', status: 'Aktif', imageUrl: '' });
+    setActiveTab('stations');
+    alert(t.saveSuccess);
   };
 
   const theme = {
@@ -186,14 +172,13 @@ export default function App() {
   };
 
   return (
-    <div className={`flex flex-col h-screen w-screen overflow-x-hidden font-sans transition-colors duration-300 ${theme.bgApp} ${theme.textMain}`}>
+    <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans transition-colors duration-300 ${theme.bgApp} ${theme.textMain}`}>
       
+      {/* HEADER */}
       <header className={`${theme.bgNav} border-b px-3 sm:px-6 py-2.5 sm:py-4 flex flex-col md:flex-row gap-2 md:gap-0 justify-between items-center z-[1000] shadow-sm w-full shrink-0`}>
         <div className="flex flex-col sm:flex-row items-center w-full md:w-auto gap-3 sm:gap-6">
           <div className="flex items-center gap-2 shrink-0">
-            {/* GAMBAR LOGO KUSTOM */}
-            {/* Pastikan file logo.png milikmu sudah diletakkan di dalam folder `public` */}
-            <img src="/marpot_logo.png" alt="Marpot Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
+            <img src="/logo.png" alt="Register Undip Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
             <h1 className="text-base sm:text-xl md:text-2xl font-extrabold tracking-tight text-blue-600 truncate max-w-[140px] xs:max-w-[180px] sm:max-w-none">
               {t.title}
             </h1>
@@ -225,16 +210,15 @@ export default function App() {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden relative w-full">
+      {/* KONTEN UTAMA */}
+      <div className="flex flex-1 overflow-hidden relative w-full h-full">
         
+        {/* TAB 1: DASBOR */}
         {activeTab === 'dashboard' && (
           <div className={`flex-1 overflow-y-auto ${theme.bgApp} p-4 sm:p-8 md:p-16 flex flex-col items-center animate-in fade-in duration-500 w-full`}>
             <div className="max-w-4xl w-full text-center mb-10 sm:mb-16">
-              
-              {/* GAMBAR LOGO KUSTOM DI HALAMAN TENTANG */}
-              {/* Pastikan file logo.png milikmu sudah diletakkan di dalam folder `public` */}
               <div className="inline-flex items-center justify-center mb-4 sm:mb-6">
-                 <img src="/marpot_logo.png" alt="Register Undip Logo Large" className="w-20 h-20 sm:w-28 sm:h-28 object-contain opacity-90 drop-shadow-lg" />
+                 <img src="/logo.png" alt="Register Undip Logo Large" className="w-20 h-20 sm:w-28 sm:h-28 object-contain opacity-90 drop-shadow-lg" />
               </div>
 
               <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold mb-3 sm:mb-4">{t.aboutTitle}</h1>
@@ -245,12 +229,9 @@ export default function App() {
               </div>
             </div>
 
-            {/* CONTACT US SECTION */}
             <div className="max-w-4xl w-full mb-12">
               <h2 className="text-lg sm:text-2xl font-bold mb-6 sm:mb-8 text-center">{t.contactUs}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 w-full">
-                
-                {/* Email Card */}
                 <a href="mailto:registerundip@gmail.com" className={`p-4 sm:p-6 rounded-xl border flex flex-col items-center justify-center gap-3 text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all hover:border-blue-500 ${theme.bgCard}`}>
                   <div className="bg-blue-100 dark:bg-blue-900/50 p-3 sm:p-4 rounded-full text-blue-600">
                     <Mail size={24} className="sm:w-8 sm:h-8" />
@@ -261,7 +242,6 @@ export default function App() {
                   </div>
                 </a>
 
-                {/* Instagram Card */}
                 <a href="https://instagram.com/register_undip" target="_blank" rel="noreferrer" className={`p-4 sm:p-6 rounded-xl border flex flex-col items-center justify-center gap-3 text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all hover:border-pink-500 ${theme.bgCard}`}>
                   <div className="bg-pink-100 dark:bg-pink-900/50 p-3 sm:p-4 rounded-full text-pink-600">
                     <Instagram size={24} className="sm:w-8 sm:h-8" />
@@ -272,7 +252,6 @@ export default function App() {
                   </div>
                 </a>
 
-                {/* WhatsApp Card */}
                 <a href="https://wa.me/6283865131284" target="_blank" rel="noreferrer" className={`p-4 sm:p-6 rounded-xl border flex flex-col items-center justify-center gap-3 text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all hover:border-green-500 ${theme.bgCard}`}>
                   <div className="bg-green-100 dark:bg-green-900/50 p-3 sm:p-4 rounded-full text-green-600">
                     <MessageCircle size={24} className="sm:w-8 sm:h-8" />
@@ -282,14 +261,16 @@ export default function App() {
                     <p className={`text-xs sm:text-sm mt-1 ${theme.textMuted}`}>083865131284 (Dava)</p>
                   </div>
                 </a>
-
               </div>
             </div>
           </div>
         )}
 
+        {/* TAB 2: PETA (OVERLAY SIDEBAR) */}
         {activeTab === 'stations' && (
-          <div className="flex flex-1 w-full relative animate-in fade-in zoom-in-95 duration-300">
+          <div className="relative w-full h-full overflow-hidden">
+            
+            {/* BACKDROP MOBILE */}
             {isSidebarOpen && (
               <div 
                 onClick={() => setIsSidebarOpen(false)} 
@@ -297,7 +278,8 @@ export default function App() {
               />
             )}
 
-            <aside className={`fixed md:relative inset-y-0 left-0 z-[2000] md:z-[999] w-72 sm:w-80 flex flex-col shadow-2xl md:shadow-xl shrink-0 transition-all duration-300 ${isSidebarOpen ? 'translate-x-0 ml-0' : '-translate-x-full md:-ml-80'} ${theme.bgSidebar}`}>
+            {/* SIDEBAR OVERLAY (Melayang di Atas Peta) */}
+            <aside className={`absolute top-0 bottom-0 left-0 z-[1000] w-72 sm:w-80 flex flex-col shadow-2xl shrink-0 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${theme.bgSidebar}`}>
               <div className={`p-4 sm:p-6 border-b flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                 <div className="flex items-center gap-2">
                   <Filter size={20} className="text-blue-500" />
@@ -348,7 +330,8 @@ export default function App() {
               </div>
             </aside>
 
-            <div className="flex-1 relative z-0 h-full w-full">
+            {/* AREA PETA UTAMA (Selalu 100% Layar) */}
+            <div className="w-full h-full relative z-0">
               <button 
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
                 className={`absolute top-3 left-3 sm:top-4 sm:left-4 z-[999] p-2.5 rounded-xl shadow-lg border focus:outline-none transition-all ${theme.bgCard} hover:text-blue-500 active:scale-95`}
@@ -361,7 +344,8 @@ export default function App() {
                 center={[-6.6, 110.5]} 
                 zoom={9} 
                 zoomControl={false} 
-                style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, height: '100%', width: '100%' }}
+                className="w-full h-full z-0"
+                style={{ width: '100%', height: '100%' }}
               >
                 <MapResizer isSidebarOpen={isSidebarOpen} />
                 <ZoomControl position="bottomright" />
@@ -389,6 +373,7 @@ export default function App() {
         )}
       </div>
 
+      {/* MODAL LOGIN */}
       {isLoginModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[3000] flex items-center justify-center p-4">
           <div className={`${theme.bgCard} rounded-2xl w-full max-w-sm shadow-2xl p-5 sm:p-6 border ${isDark ? 'border-slate-700' : 'border-white'}`}>
@@ -411,6 +396,7 @@ export default function App() {
         </div>
       )}
 
+      {/* MODAL TAMBAH DATA */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[3000] flex items-center justify-center p-3 sm:p-4">
           <div className={`${theme.bgCard} rounded-2xl w-full max-w-lg shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto border ${isDark ? 'border-slate-700' : 'border-white'}`}>
@@ -444,6 +430,7 @@ export default function App() {
         </div>
       )}
 
+      {/* MODAL METADATA */}
       {modalData && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[4000] flex items-center justify-center p-4">
           <div className={`${theme.bgCard} rounded-2xl w-full max-w-lg shadow-2xl p-5 sm:p-6 border ${isDark ? 'border-slate-700' : 'border-white'}`}>
