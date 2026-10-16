@@ -20,7 +20,7 @@ L.Icon.Default.mergeOptions({
 
 function MapResizer({ isSidebarOpen }) {
   const map = useMap();
-  useEffect(() => {
+  (() => {
     const timer = setTimeout(() => {
       map.invalidateSize();
     }, 300);
@@ -91,10 +91,20 @@ export default function App() {
   });
 
   useEffect(() => {
-    const savedStations = localStorage.getItem('marineGeoportalData');
-    if (savedStations) setStations(JSON.parse(savedStations));
-    else { setStations(initialData); localStorage.setItem('marineGeoportalData', JSON.stringify(initialData)); }
-  }, []);
+  fetch('/api/stations')
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.length > 0) {
+        setStations(data);
+      } else {
+        setStations(initialData);
+      }
+    })
+    .catch(err => {
+      console.error('Gagal mengambil data:', err);
+      setStations(initialData);
+    });
+}, []);
 
   useEffect(() => {
     if (activeTab === 'stations') {
@@ -125,7 +135,7 @@ export default function App() {
 
   const handleLogout = () => { setIsAdmin(false); };
 
-  const handleAddStation = (e) => {
+   const handleAddStation = async (e) => {
     e.preventDefault();
     let processedImageUrl = formData.imageUrl.trim();
     if (processedImageUrl.includes('drive.google.com')) {
@@ -133,17 +143,36 @@ export default function App() {
       if (match && match[1]) processedImageUrl = `https://drive.google.com/uc?export=view&id=${match[1]}`;
     }
     if (processedImageUrl === '') processedImageUrl = 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&q=80';
-
-    const newStation = { id: Date.now(), ...formData, lat: parseFloat(formData.lat), lng: parseFloat(formData.lng), imageUrl: processedImageUrl };
-    const updatedStations = [...stations, newStation];
-    
-    setStations(updatedStations);
-    localStorage.setItem('marineGeoportalData', JSON.stringify(updatedStations));
-    
-    setIsAddModalOpen(false);
-    setFormData({ name: '', lat: '', lng: '', category: 'Oceanography', owner: '', description: '', method: 'Sensor Lapangan', status: 'Aktif', imageUrl: '' });
-    setActiveTab('stations');
-    alert(t.saveSuccess);
+  
+    const newStation = { 
+      id: Date.now(), 
+      ...formData, 
+      lat: parseFloat(formData.lat), 
+      lng: parseFloat(formData.lng), 
+      imageUrl: processedImageUrl 
+    };
+  
+    try {
+      const res = await fetch('/api/stations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newStation)
+      });
+      
+      if (res.ok) {
+        const savedStation = await res.json();
+        setStations(prev => [...prev, savedStation]);
+        setIsAddModalOpen(false);
+        setFormData({ name: '', lat: '', lng: '', category: 'Oceanography', owner: '', description: '', method: 'Sensor Lapangan', status: 'Aktif', imageUrl: '' });
+        setActiveTab('stations');
+        alert(t.saveSuccess);
+      } else {
+        alert('Gagal menyimpan data.');
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      alert('Terjadi kesalahan koneksi.');
+    }
   };
 
   const theme = {
