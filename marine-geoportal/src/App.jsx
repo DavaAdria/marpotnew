@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from 'react-leaflet';
 import { 
   Filter, Database, X, Check, Menu, Plus, LogOut, User, 
-  Globe, Moon, Sun, Mail, MessageCircle, Trash2, Search, Layers, Send, Map as MapIcon, CheckSquare
+  Globe, Moon, Sun, Mail, MessageCircle, Trash2, Search, Layers, Send, Map as MapIcon, CheckSquare, Upload
 } from 'lucide-react'; 
 import { Instagram } from 'lucide-brands';
 
@@ -40,7 +40,6 @@ function MapResizer({ isSidebarOpen }) {
   return null;
 }
 
-// 1. UPDATE KATEGORI PETA
 const categories = [
   "Tide", 
   "Sediment", 
@@ -54,7 +53,6 @@ const categories = [
   "Ocean Current"
 ];
 
-// JENIS DATA YANG TERSEDIA
 const dataTypes = ["Data Mentah", "Data Olahan", "Peta", "Jurnal"];
 
 const BASEMAPS = {
@@ -96,18 +94,15 @@ const dict = {
     deleteConfirm: "Apakah Anda yakin ingin menghapus data peta ini?",
     deleteSuccess: "Data peta berhasil dihapus.",
     searchPlaceholder: "Cari nama data, lokasi, atau pengelola...",
-    basemapTitle: "Mode Peta",
-    satellitelayer: "Satelit Esri",
-    osmlayer: "OpenStreetMap",
-    requestDataBtn: "Minta Akses Data Ini",
-    requestModalTitle: "Form Permintaan Akses Data Geospasial",
-    reqName: "Nama Lengkap",
-    reqInst: "Instansi / Universitas / Organisasi",
-    reqEmail: "Email Resmi",
-    reqPurpose: "Tujuan Penggunaan Data",
-    reqDataSelect: "Judul Data Peta yang Diminta",
-    sendReqWhatsapp: "Kirim via WhatsApp",
-    sendReqEmail: "Kirim via Email"
+    basemapTitle: "Mode Peta", satellitelayer: "Satelit Esri", osmlayer: "OpenStreetMap",
+    requestDataBtn: "Minta Akses Data Ini", requestModalTitle: "Form Permintaan Akses Data Geospasial",
+    reqName: "Nama Lengkap", reqInst: "Instansi / Universitas / Organisasi", reqEmail: "Email Resmi",
+    reqPurpose: "Tujuan Penggunaan Data", reqDataSelect: "Judul Data Peta yang Diminta",
+    sendReqWhatsapp: "Kirim via WhatsApp", sendReqEmail: "Kirim via Email",
+    // Teks Baru Untuk Upload Data
+    uploadDataBtn: "Upload Data", uploadModalTitle: "Form Pengajuan Upload Data",
+    uploadDataName: "Judul Data yang Diupload", uploadLink: "Link File / GDrive Data Anda",
+    uploadDesc: "Deskripsi Singkat / Abstrak"
   },
   en: {
     title: "Register Geoportal (Re-Port)", dashboard: "Dashboard", stations: "Interactive Map",
@@ -128,18 +123,14 @@ const dict = {
     deleteConfirm: "Are you sure you want to delete this map data?",
     deleteSuccess: "Map data deleted successfully.",
     searchPlaceholder: "Search data name, location, or manager...",
-    basemapTitle: "Map Mode",
-    satellitelayer: "Esri Satellite",
-    osmlayer: "OpenStreetMap",
-    requestDataBtn: "Request Access to Data",
-    requestModalTitle: "Geospatial Data Access Request Form",
-    reqName: "Full Name",
-    reqInst: "Institution / University / Organization",
-    reqEmail: "Official Email",
-    reqPurpose: "Purpose of Data Request",
-    reqDataSelect: "Requested Map Dataset Title",
-    sendReqWhatsapp: "Send via WhatsApp",
-    sendReqEmail: "Send via Email"
+    basemapTitle: "Map Mode", satellitelayer: "Esri Satellite", osmlayer: "OpenStreetMap",
+    requestDataBtn: "Request Access to Data", requestModalTitle: "Geospatial Data Access Request Form",
+    reqName: "Full Name", reqInst: "Institution / University / Organization", reqEmail: "Official Email",
+    reqPurpose: "Purpose of Data Request", reqDataSelect: "Requested Map Dataset Title",
+    sendReqWhatsapp: "Send via WhatsApp", sendReqEmail: "Send via Email",
+    uploadDataBtn: "Upload Data", uploadModalTitle: "Data Upload Request Form",
+    uploadDataName: "Uploaded Data Title", uploadLink: "Your File / GDrive Link",
+    uploadDesc: "Short Description / Abstract"
   }
 };
 
@@ -170,6 +161,12 @@ export default function App() {
   const [requestMapData, setRequestMapData] = useState(null);
   const [requestForm, setRequestForm] = useState({
     name: '', inst: '', email: '', purpose: '', selectedData: '', requestedTypes: []
+  });
+
+  // STATE UNTUK FORM PENGAJUAN UPLOAD DATA OLEH USER
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadForm, setUploadForm] = useState({
+    name: '', inst: '', email: '', title: '', category: 'Ocean Current', types: [], link: '', description: ''
   });
 
   // PENYIMPANAN DATA
@@ -342,6 +339,46 @@ export default function App() {
     );
     window.location.href = `mailto:registerundip@gmail.com?subject=${subject}&body=${body}`;
     setIsRequestModalOpen(false);
+  };
+
+  // FUNGSI UNTUK PENGAJUAN UPLOAD DATA
+  const handleSendUploadWhatsApp = (e) => {
+    e.preventDefault();
+    const rawText = `Halo Admin Register Undip, saya ingin mengajukan publikasi/upload data ke Register Geoportal:\n\n` +
+      `*Nama:* ${uploadForm.name}\n` +
+      `*Instansi:* ${uploadForm.inst}\n` +
+      `*Email:* ${uploadForm.email}\n` +
+      `*Judul Data:* ${uploadForm.title}\n` +
+      `*Kategori:* ${uploadForm.category}\n` +
+      `*Jenis Data:* ${uploadForm.types.length > 0 ? uploadForm.types.join(', ') : '-'}\n` +
+      `*Link File / GDrive:* ${uploadForm.link}\n` +
+      `*Deskripsi Singkat:* ${uploadForm.description}`;
+    
+    const text = encodeURIComponent(rawText);
+    const waUrl = `https://wa.me/6283865131284?text=${text}`;
+    
+    const newWindow = window.open(waUrl, '_blank', 'noopener,noreferrer');
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        window.location.href = waUrl;
+    }
+    setIsUploadModalOpen(false);
+  };
+
+  const handleSendUploadEmail = () => {
+    const subject = encodeURIComponent(`[Pengajuan Upload Data] - ${uploadForm.title}`);
+    const body = encodeURIComponent(
+      `Yth. Tim Register Undip,\n\nSaya bermaksud mengajukan upload/publikasi data geospasial dengan rincian:\n\n` +
+      `Nama: ${uploadForm.name}\n` +
+      `Instansi: ${uploadForm.inst}\n` +
+      `Email: ${uploadForm.email}\n` +
+      `Judul Data: ${uploadForm.title}\n` +
+      `Kategori: ${uploadForm.category}\n` +
+      `Jenis Data: ${uploadForm.types.length > 0 ? uploadForm.types.join(', ') : '-'}\n` +
+      `Link File / GDrive: ${uploadForm.link}\n` +
+      `Deskripsi Singkat: ${uploadForm.description}\n\nMohon direview dan dipublikasikan. Terima kasih.`
+    );
+    window.location.href = `mailto:registerundip@gmail.com?subject=${subject}&body=${body}`;
+    setIsUploadModalOpen(false);
   };
 
   const theme = {
@@ -533,9 +570,15 @@ export default function App() {
                       </button>
                     </div>
                   ) : (
-                    <button onClick={() => setIsLoginModalOpen(true)} className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-md text-sm">
-                      <User size={16} /> {t.adminLogin}
-                    </button>
+                    // TAMPILAN JIKA BUKAN ADMIN (USER BIASA)
+                    <div className="flex flex-col gap-2">
+                      <button onClick={() => setIsUploadModalOpen(true)} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-md text-sm">
+                        <Upload size={16} /> {t.uploadDataBtn}
+                      </button>
+                      <button onClick={() => setIsLoginModalOpen(true)} className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-sm text-sm border ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-100'}`}>
+                        <User size={16} /> {t.adminLogin}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -652,7 +695,6 @@ export default function App() {
                 <input readOnly type="text" value={requestForm.selectedData} className={`w-full p-2.5 rounded-xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`} />
               </div>
 
-              {/* CHECKBOX JENIS DATA YANG DIMINTA */}
               <div>
                 <label className="block font-bold mb-2 opacity-80">{t.reqDataTypes}</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -695,6 +737,89 @@ export default function App() {
         </div>
       )}
 
+      {/* MODAL PENGAJUAN UPLOAD DATA (UNTUK USER) */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[4000] flex items-center justify-center p-4">
+          <div className={`${theme.bgCard} rounded-3xl w-full max-w-lg shadow-2xl p-6 border ${isDark ? 'border-slate-800' : 'border-white'} max-h-[95vh] overflow-y-auto`}>
+            <div className={`flex justify-between items-center mb-4 border-b pb-3 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+              <h2 className="font-bold text-base sm:text-lg flex items-center gap-2"><Upload size={18} className="text-emerald-500"/> {t.uploadModalTitle}</h2>
+              <button onClick={() => setIsUploadModalOpen(false)} className="p-1 rounded-full hover:bg-red-500 hover:text-white transition"><X size={18} /></button>
+            </div>
+            
+            <form onSubmit={handleSendUploadWhatsApp} className="space-y-3.5 text-xs sm:text-sm">
+              <div>
+                <label className="block font-bold mb-1 opacity-80">{t.reqName}</label>
+                <input required type="text" value={uploadForm.name} onChange={(e) => setUploadForm({...uploadForm, name: e.target.value})} className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-emerald-500 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="Nama Anda" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1 opacity-80">{t.reqInst}</label>
+                  <input required type="text" value={uploadForm.inst} onChange={(e) => setUploadForm({...uploadForm, inst: e.target.value})} className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-emerald-500 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="Instansi / Univ" />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1 opacity-80">{t.reqEmail}</label>
+                  <input required type="email" value={uploadForm.email} onChange={(e) => setUploadForm({...uploadForm, email: e.target.value})} className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-emerald-500 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="email@domain.com" />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1 opacity-80">{t.uploadDataName}</label>
+                  <input required type="text" value={uploadForm.title} onChange={(e) => setUploadForm({...uploadForm, title: e.target.value})} className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-emerald-500 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="Judul Peta / Data" />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1 opacity-80">{t.category}</label>
+                  <select value={uploadForm.category} onChange={(e) => setUploadForm({...uploadForm, category: e.target.value})} className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-emerald-500 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-2 opacity-80">{t.availableData}</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {dataTypes.map(type => (
+                    <label key={type} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition ${uploadForm.types.includes(type) ? 'bg-emerald-50 border-emerald-500 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-500 dark:text-emerald-300' : (isDark ? 'bg-slate-900 border-slate-700 hover:border-slate-500' : 'bg-slate-50 border-slate-200 hover:border-slate-300')}`}>
+                      <input 
+                        type="checkbox" 
+                        checked={uploadForm.types.includes(type)}
+                        onChange={() => {
+                          setUploadForm(prev => ({
+                            ...prev,
+                            types: prev.types.includes(type) ? prev.types.filter(t => t !== type) : [...prev.types, type]
+                          }))
+                        }}
+                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                      />
+                      <span className="font-medium text-xs">{type}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1 opacity-80">{t.uploadLink}</label>
+                <input required type="url" value={uploadForm.link} onChange={(e) => setUploadForm({...uploadForm, link: e.target.value})} className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-emerald-500 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="https://drive.google.com/..." />
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1 opacity-80">{t.uploadDesc}</label>
+                <textarea required value={uploadForm.description} onChange={(e) => setUploadForm({...uploadForm, description: e.target.value})} className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-emerald-500 h-16 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="Penjelasan singkat mengenai data..." />
+              </div>
+
+              <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button type="submit" className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-md">
+                  <MessageCircle size={16} /> {t.sendReqWhatsapp}
+                </button>
+                <button type="button" onClick={handleSendUploadEmail} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-md">
+                  <Mail size={16} /> {t.sendReqEmail}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL LOGIN */}
       {isLoginModalOpen && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[3000] flex items-center justify-center p-4">
@@ -718,7 +843,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL TAMBAH DATA PETA */}
+      {/* MODAL TAMBAH DATA PETA (ADMIN) */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[3000] flex items-center justify-center p-3 sm:p-4">
           <div className={`${theme.bgCard} rounded-3xl w-full max-w-lg shadow-2xl p-6 max-h-[90vh] overflow-y-auto border ${isDark ? 'border-slate-800' : 'border-white'}`}>
@@ -745,7 +870,6 @@ export default function App() {
                 <div><label className="block text-xs font-bold mb-1 opacity-70">{t.owner}</label><input required type="text" name="owner" value={formData.owner} onChange={handleInputChange} className={`w-full p-2.5 rounded-xl text-sm border focus:outline-none focus:border-cyan-500 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} /></div>
               </div>
               
-              {/* CHECKBOX JENIS DATA SAAT INPUT ADMIN */}
               <div>
                 <label className="block text-xs font-bold mb-1 opacity-70">{t.availableData}</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -771,7 +895,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL METADATA DENGAN TOMBOL PERMINTAAN DATA */}
+      {/* MODAL METADATA */}
       {modalData && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[4000] flex items-center justify-center p-4">
           <div className={`${theme.bgCard} rounded-3xl w-full max-w-lg shadow-2xl p-6 border ${isDark ? 'border-slate-800' : 'border-white'}`}>
@@ -794,7 +918,6 @@ export default function App() {
               <div className={`grid grid-cols-3 border-b pb-2 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}><span className="opacity-70">Nama Data</span><span className="col-span-2 font-bold">{modalData.name}</span></div>
               <div className={`grid grid-cols-3 border-b pb-2 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}><span className="opacity-70">Kategori</span><span className="col-span-2"><span className="bg-blue-600 text-white px-2.5 py-0.5 rounded-md text-xs font-bold">{modalData.category}</span></span></div>
               
-              {/* TAMPILAN JENIS DATA DI METADATA */}
               <div className={`grid grid-cols-3 border-b pb-2 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                 <span className="opacity-70">Data Tersedia</span>
                 <span className="col-span-2">
@@ -815,7 +938,6 @@ export default function App() {
               <div className="grid grid-cols-3"><span className="opacity-70">Deskripsi</span><span className="col-span-2 leading-relaxed">{modalData.description}</span></div>
               
               <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
-                
                 <button 
                   onClick={() => openRequestModal(modalData)}
                   className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-md"
