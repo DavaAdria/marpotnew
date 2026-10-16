@@ -16,7 +16,19 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Resizer otomatis agar peta selalu pas terlepas dari kondisi layar
+// Helper Fungsi Ekstraksi Direct Image Link Google Drive
+const formatImageUrl = (url) => {
+  if (!url || typeof url !== 'string') return 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&q=80';
+  const trimmed = url.trim();
+  if (trimmed.includes('drive.google.com') || trimmed.includes('googleusercontent.com')) {
+    const match = trimmed.match(/\/d\/([a-zA-Z0-9_-]+)/) || trimmed.match(/id=([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+    }
+  }
+  return trimmed || 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&q=80';
+};
+
 function MapResizer({ isSidebarOpen }) {
   const map = useMap();
   useEffect(() => {
@@ -41,7 +53,7 @@ const dict = {
     title: "Register Geoportal (Re-Port)", dashboard: "Dasbor", stations: "Stasiun Peta",
     adminLogin: "Login Admin", logout: "Keluar", addData: "Tambah Data",
     aboutTitle: "Tentang Register Geoportal (Re-Port)", aboutSub: "Platform Pemantauan Oseanografi Interaktif",
-    aboutDesc: "Register Geoportal (Re-port) merupakan sebuah portal yang memuat data mengenai informasi geospasial kelautan yang dirancang oleh Register Undip sebagai bahan pembelajaran dan edukasi mahasiswa mengenai penginderaan jauh dan sistem informasi geografi dalam lingkup kelautan. Geoportal ini mengatur dan menyediakan layanan, pencarian, dan akses untuk informasi geospasial kelautan.",
+    aboutDesc: "Register Geoportal (Re-port) merupakan sebuah portal yang memuat data mengenai informasi geospasial kelautan yang dirancang oleh Register Undip sebagai bahan pembelajaran dan edukasi mahasiswa mengenai penginderaan jauh dan sistem informasi geografi dalam lingkup kelautan.",
     contactUs: "Hubungi Kami",
     filterTitle: "Filter Data", showing: "Menampilkan", activeSpots: "titik aktif",
     mapCategory: "Kategori Pemetaan", fullMeta: "Lihat Metadata Penuh",
@@ -130,14 +142,15 @@ export default function App() {
 
   const handleAddStation = async (e) => {
     e.preventDefault();
-    let processedImageUrl = formData.imageUrl.trim();
-    if (processedImageUrl.includes('drive.google.com')) {
-      const match = processedImageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-      if (match && match[1]) processedImageUrl = `https://drive.google.com/uc?export=view&id=${match[1]}`;
-    }
-    if (processedImageUrl === '') processedImageUrl = 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&q=80';
+    const processedImageUrl = formatImageUrl(formData.imageUrl);
 
-    const newStation = { id: Date.now(), ...formData, lat: parseFloat(formData.lat), lng: parseFloat(formData.lng), imageUrl: processedImageUrl };
+    const newStation = { 
+      id: Date.now(), 
+      ...formData, 
+      lat: parseFloat(formData.lat), 
+      lng: parseFloat(formData.lng), 
+      imageUrl: processedImageUrl 
+    };
 
     try {
       const res = await fetch('https://report-backend.vercel.app/api/stations', {
@@ -178,7 +191,7 @@ export default function App() {
       <header className={`${theme.bgNav} border-b px-3 sm:px-6 py-2.5 sm:py-4 flex flex-col md:flex-row gap-2 md:gap-0 justify-between items-center z-[1000] shadow-sm w-full shrink-0`}>
         <div className="flex flex-col sm:flex-row items-center w-full md:w-auto gap-3 sm:gap-6">
           <div className="flex items-center gap-2 shrink-0">
-            <img src="/marpot_logo.png" alt="Register Undip Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
+            <img src="/logo.png" alt="Register Undip Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
             <h1 className="text-base sm:text-xl md:text-2xl font-extrabold tracking-tight text-blue-600 truncate max-w-[140px] xs:max-w-[180px] sm:max-w-none">
               {t.title}
             </h1>
@@ -218,7 +231,7 @@ export default function App() {
           <div className={`flex-1 overflow-y-auto ${theme.bgApp} p-4 sm:p-8 md:p-16 flex flex-col items-center animate-in fade-in duration-500 w-full`}>
             <div className="max-w-4xl w-full text-center mb-10 sm:mb-16">
               <div className="inline-flex items-center justify-center mb-4 sm:mb-6">
-                 <img src="/marpot_logo.png" alt="Register Undip Logo Large" className="w-20 h-20 sm:w-28 sm:h-28 object-contain opacity-90 drop-shadow-lg" />
+                 <img src="/logo.png" alt="Register Undip Logo Large" className="w-20 h-20 sm:w-28 sm:h-28 object-contain opacity-90 drop-shadow-lg" />
               </div>
 
               <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold mb-3 sm:mb-4">{t.aboutTitle}</h1>
@@ -266,11 +279,10 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: PETA (OVERLAY SIDEBAR) */}
+        {/* TAB 2: PETA */}
         {activeTab === 'stations' && (
           <div className="relative w-full h-full overflow-hidden">
             
-            {/* BACKDROP MOBILE */}
             {isSidebarOpen && (
               <div 
                 onClick={() => setIsSidebarOpen(false)} 
@@ -278,7 +290,6 @@ export default function App() {
               />
             )}
 
-            {/* SIDEBAR OVERLAY (Melayang di Atas Peta) */}
             <aside className={`absolute top-0 bottom-0 left-0 z-[1000] w-72 sm:w-80 flex flex-col shadow-2xl shrink-0 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${theme.bgSidebar}`}>
               <div className={`p-4 sm:p-6 border-b flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                 <div className="flex items-center gap-2">
@@ -330,7 +341,7 @@ export default function App() {
               </div>
             </aside>
 
-            {/* AREA PETA UTAMA (Selalu 100% Layar) */}
+            {/* AREA PETA */}
             <div className="w-full h-full relative z-0">
               <button 
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
@@ -356,7 +367,15 @@ export default function App() {
                     <Popup className={`rounded-xl p-0 overflow-hidden ${isDark ? 'dark-popup' : ''}`}>
                       <div className={`w-56 sm:w-64 ${isDark ? 'bg-slate-800 text-white' : 'bg-white'}`}>
                         <div className="mb-2 sm:mb-3 relative">
-                          <img src={data.imageUrl} alt={data.name} className="w-full h-28 sm:h-36 object-cover rounded-t-lg" />
+                          <img 
+                            src={formatImageUrl(data.imageUrl)} 
+                            alt={data.name} 
+                            className="w-full h-28 sm:h-36 object-cover rounded-t-lg"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&q=80";
+                            }}
+                          />
                           <span className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 text-blue-700 text-[9px] sm:text-[10px] font-extrabold uppercase rounded shadow-sm">{data.category}</span>
                         </div>
                         <div className="px-3 pb-3">
@@ -422,7 +441,7 @@ export default function App() {
                 </div>
                 <div><label className="block text-xs font-bold mb-1 opacity-70">{t.owner}</label><input required type="text" name="owner" value={formData.owner} onChange={handleInputChange} className={`w-full p-2.5 rounded-lg text-sm border focus:outline-none focus:border-cyan-500 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`} /></div>
               </div>
-              <div><label className="block text-xs font-bold mb-1 text-cyan-500">{t.photo}</label><input type="url" name="imageUrl" value={formData.imageUrl} onChange={handleInputChange} className={`w-full p-2.5 rounded-lg text-sm border focus:outline-none focus:border-cyan-500 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`} /></div>
+              <div><label className="block text-xs font-bold mb-1 text-cyan-500">{t.photo}</label><input type="url" name="imageUrl" value={formData.imageUrl} onChange={handleInputChange} className={`w-full p-2.5 rounded-lg text-sm border focus:outline-none focus:border-cyan-500 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`} placeholder="https://drive.google.com/file/d/..." /></div>
               <div><label className="block text-xs font-bold mb-1 opacity-70">{t.desc}</label><textarea required name="description" value={formData.description} onChange={handleInputChange} className={`w-full p-2.5 rounded-lg text-sm border focus:outline-none focus:border-cyan-500 h-16 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`} /></div>
               <button type="submit" className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2.5 sm:py-3 rounded-xl mt-3 shadow-lg shadow-cyan-500/30 transition text-sm">{t.saveBtn}</button>
             </form>
@@ -439,6 +458,17 @@ export default function App() {
               <button onClick={() => setModalData(null)} className="p-1 rounded-full hover:bg-red-500 hover:text-white transition"><X size={18} /></button>
             </div>
             <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
+              <div className="mb-3">
+                <img 
+                  src={formatImageUrl(modalData.imageUrl)} 
+                  alt={modalData.name} 
+                  className="w-full h-44 object-cover rounded-xl shadow-md"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&q=80";
+                  }}
+                />
+              </div>
               <div className={`grid grid-cols-3 border-b pb-2 ${isDark ? 'border-slate-700' : 'border-slate-100'}`}><span className="opacity-70">Nama Data</span><span className="col-span-2 font-bold">{modalData.name}</span></div>
               <div className={`grid grid-cols-3 border-b pb-2 ${isDark ? 'border-slate-700' : 'border-slate-100'}`}><span className="opacity-70">Kategori</span><span className="col-span-2"><span className="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold">{modalData.category}</span></span></div>
               <div className={`grid grid-cols-3 border-b pb-2 ${isDark ? 'border-slate-700' : 'border-slate-100'}`}><span className="opacity-70">Koordinat</span><span className="col-span-2 font-mono text-xs">{modalData.lat}, {modalData.lng}</span></div>
