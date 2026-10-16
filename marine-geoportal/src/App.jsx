@@ -78,7 +78,7 @@ const dict = {
   id: {
     title: "Register Geoportal (Re-Port)", dashboard: "Dasbor", stations: "Peta Interaktif",
     adminLogin: "Login Admin", logout: "Keluar", addData: "Tambah Data Peta",
-    aboutTitle: "Tentang Register Geoportal (Re-Port)", aboutSub: "Platform Pemantauan Oseanografi Interaktif",
+    aboutTitle: "Tentang Register Geoportal (Re-Port)", aboutSub: "Portal Data Informasi Geospasial Kelautan",
     aboutDesc: "Register Geoportal (Re-port) merupakan sebuah portal yang memuat data mengenai informasi geospasial kelautan yang dirancang oleh Register Undip sebagai bahan pembelajaran dan edukasi mahasiswa mengenai penginderaan jauh dan sistem informasi geografi dalam lingkup kelautan. Geoportal ini mengatur dan menyediakan layanan, pencarian, dan akses untuk informasi geospasial kelautan.",
     contactUs: "Hubungi Kami",
     filterTitle: "Filter Data Peta", showing: "Menampilkan", activeSpots: "titik data aktif",
@@ -107,7 +107,7 @@ const dict = {
   en: {
     title: "Register Geoportal (Re-Port)", dashboard: "Dashboard", stations: "Interactive Map",
     adminLogin: "Admin Login", logout: "Logout", addData: "Add Map Data",
-    aboutTitle: "About Register Geoportal (Re-Port)", aboutSub: "Interactive Oceanographic Monitoring Platform",
+    aboutTitle: "About Register Geoportal (Re-Port)", aboutSub: "Marine Geospatial Information Data Portal",
     aboutDesc: "Register Geoportal (Re-port) is a portal containing data on marine geospatial information designed by Register Undip as learning and educational material for students regarding remote sensing and geographic information systems within the marine scope.",
     contactUs: "Contact Us",
     filterTitle: "Map Data Filter", showing: "Showing", activeSpots: "active data points",
