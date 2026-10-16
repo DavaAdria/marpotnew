@@ -40,7 +40,17 @@ function MapResizer({ isSidebarOpen }) {
   return null;
 }
 
-const categories = ["Ecology", "Chemistry", "Oceanography", "Meteorology"];
+const categories = ["Tide",
+    "Sediment",
+    "Ocean Waves",
+    "Marine Pollution",
+    "Fishery",
+    "Ecology And Biota",
+    "Chemistry",
+    "Climatology And Meteorology Atmosphere",
+    "Disaster Mitigation",
+    "Ocean Current",
+  ];
 
 const BASEMAPS = {
   satellite: {
