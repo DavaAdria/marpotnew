@@ -149,13 +149,12 @@ export default function App() {
     name: '', lat: '', lng: '', category: 'Oceanography', owner: '', description: '', method: 'Sensor Lapangan', status: 'Aktif', imageUrl: ''
   });
 
-  // STATE UNTUK FORM REQUEST DATA (Dikembalikan)
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [requestForm, setRequestForm] = useState({
     name: '', inst: '', email: '', purpose: '', selectedData: ''
   });
 
-  // PENYIMPANAN DATA (Hibrid localStorage & Backend)
+  // PENYIMPANAN DATA
   useEffect(() => {
     const savedData = localStorage.getItem('marineGeoportalData');
     const localStations = savedData ? JSON.parse(savedData) : null;
@@ -276,23 +275,34 @@ export default function App() {
     alert(t.deleteSuccess);
   };
 
-  // FUNGSI REQUEST DATA (Dikembalikan)
   const openRequestModal = (dataName = '') => {
     setRequestForm(prev => ({ ...prev, selectedData: dataName }));
     setIsRequestModalOpen(true);
-    setModalData(null); // Tutup popup metadata agar fokus ke form
+    setModalData(null); 
   };
 
+  // PERBAIKAN: FUNGSI WHATSAPP YANG DILENGKAPI ENCODE URL DAN ANTI-POPUP BLOCKER
   const handleSendRequestWhatsApp = (e) => {
     e.preventDefault();
-    const text = `Halo Admin Register Undip, saya ingin mengajukan permintaan akses data geospasial kelautan:%0A%0A` +
-      `*Nama:* ${requestForm.name}%0A` +
-      `*Instansi:* ${requestForm.inst}%0A` +
-      `*Email:* ${requestForm.email}%0A` +
-      `*Data yang Diminta:* ${requestForm.selectedData}%0A` +
+    const rawText = `Halo Admin Register Undip, saya ingin mengajukan permintaan akses data geospasial kelautan:\n\n` +
+      `*Nama:* ${requestForm.name}\n` +
+      `*Instansi:* ${requestForm.inst}\n` +
+      `*Email:* ${requestForm.email}\n` +
+      `*Data yang Diminta:* ${requestForm.selectedData}\n` +
       `*Tujuan Penggunaan:* ${requestForm.purpose}`;
     
-    window.open(`https://wa.me/6283865131284?text=${text}`, '_blank');
+    // Encode text supaya spasi dan karakter khusus aman di URL
+    const text = encodeURIComponent(rawText);
+    const waUrl = `https://wa.me/6283865131284?text=${text}`;
+    
+    // Coba buka tab baru
+    const newWindow = window.open(waUrl, '_blank', 'noopener,noreferrer');
+    
+    // Jika tab baru diblokir oleh browser, paksa buka di tab yang sama
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        window.location.href = waUrl;
+    }
+
     setIsRequestModalOpen(false);
   };
 
@@ -306,7 +316,7 @@ export default function App() {
       `Data yang Diminta: ${requestForm.selectedData}\n` +
       `Tujuan Penggunaan: ${requestForm.purpose}\n\nTerima kasih.`
     );
-    window.open(`mailto:registerundip@gmail.com?subject=${subject}&body=${body}`, '_blank');
+    window.location.href = `mailto:registerundip@gmail.com?subject=${subject}&body=${body}`;
     setIsRequestModalOpen(false);
   };
 
@@ -719,7 +729,7 @@ export default function App() {
               
               <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
                 
-                {/* TOMBOL MINTA AKSES DIKEMBALIKAN */}
+                {/* TOMBOL MINTA AKSES */}
                 <button 
                   onClick={() => openRequestModal(modalData.name)}
                   className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-md"
