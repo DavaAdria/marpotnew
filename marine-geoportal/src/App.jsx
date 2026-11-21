@@ -16,7 +16,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-const API_URL = 'https://report-backend.vercel.app/api/stations';
+const API_URL = '/api/stations';
 
 const formatImageUrl = (url) => {
   if (!url || typeof url !== 'string') return 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&q=80';
@@ -259,15 +259,15 @@ export default function App() {
 
   const handleDeleteStation = async (stationObj) => {
     if (!window.confirm(t.deleteConfirm)) return;
-    const targetId = stationObj._id || stationObj.id;
+    const targetId = stationObj.id;
 
     try { 
-      const res = await fetch(`${API_URL}/${targetId}`, { method: 'DELETE' });
+      const res = await fetch(`${API_URL}?id=${targetId}`, { method: 'DELETE' });
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(`Status ${res.status}: ${errText}`);
       }
-      if (modalData && (modalData._id === targetId || modalData.id === targetId)) setModalData(null);
+      if (modalData && modalData.id === targetId) setModalData(null);
       await fetchStationsFromServer();
       alert(t.deleteSuccess);
     } catch (err) { 
