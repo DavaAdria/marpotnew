@@ -312,11 +312,13 @@ export default function App() {
   const theme = {
     bgApp: isDark ? 'bg-slate-950' : 'bg-slate-50',
     textMain: isDark ? 'text-slate-100' : 'text-slate-800',
-    bgNav: isDark ? 'bg-slate-950/90 border-slate-800 backdrop-blur-md' : 'bg-white/90 border-slate-200/80 backdrop-blur-md',
-    bgCard: isDark ? 'bg-slate-900/90 border-slate-800 text-slate-200 backdrop-blur-md' : 'bg-white/90 border-slate-200/80 text-slate-700 shadow-lg shadow-blue-500/5 backdrop-blur-md',
+    bgNav: isDark ? 'bg-slate-950/90 border-slate-800 backdrop-blur-md' : 'bg-white/95 border-slate-200/80 backdrop-blur-md',
+    bgCard: isDark ? 'bg-slate-900/90 border-slate-800 text-slate-200 backdrop-blur-md' : 'bg-white/95 border-slate-200/80 text-slate-700 shadow-lg shadow-blue-500/5 backdrop-blur-md',
     bgSidebar: isDark ? 'bg-slate-900/95 border-slate-800 backdrop-blur-md' : 'bg-white/95 border-slate-200/80 backdrop-blur-md shadow-2xl',
     bgFilterItem: isDark ? 'bg-slate-800/80 border-slate-700 hover:bg-slate-700' : 'bg-slate-50 border-slate-200/80 hover:bg-blue-50/50',
     textMuted: isDark ? 'text-slate-400' : 'text-slate-500',
+    pillContainer: isDark ? 'bg-slate-800/90 border border-slate-700' : 'bg-slate-200/80 border border-slate-300/60',
+    pillInactive: isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900',
   };
 
   const renderPopupContent = (data) => (
@@ -341,7 +343,7 @@ export default function App() {
   return (
     <div className={`flex flex-col h-[100dvh] w-screen overflow-hidden font-sans transition-colors duration-300 ${theme.bgApp} ${theme.textMain}`}>
       {/* HEADER: KIRI LOGO | TENGAH PILIHAN HALAMAN | KANAN BAHASA & MODE */}
-      <header className={`${theme.bgNav} border-b px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col md:grid md:grid-cols-3 gap-2 md:gap-4 items-center z-[1000] shadow-sm w-full shrink-0`}>
+      <header className={`${theme.bgNav} border-b px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col md:grid md:grid-cols-3 gap-2 md:gap-4 items-center z-[1000] shadow-sm w-full shrink-0 transition-colors duration-300`}>
         {/* Kolom 1: Logo & Judul */}
         <div className="flex items-center justify-center md:justify-start gap-2.5 shrink-0">
           <img src="/logo.png" alt="Register Undip Logo" className="w-7 h-7 sm:w-9 sm:h-9 object-contain drop-shadow-sm" />
@@ -350,24 +352,24 @@ export default function App() {
           </h1>
         </div>
 
-        {/* Kolom 2: Pilihan Halaman di Tengah (Desktop) + Bahasa & Mode sejajar di Mobile */}
+        {/* Kolom 2: Pilihan Halaman (Mengikuti isDark) */}
         <div className="flex items-center justify-between md:justify-center w-full gap-2">
-          <div className="flex flex-1 md:flex-initial bg-slate-200/60 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-bold gap-1">
+          <div className={`flex flex-1 md:flex-initial p-1 rounded-xl text-xs font-bold gap-1 transition-colors duration-300 ${theme.pillContainer}`}>
             <button 
               onClick={() => setActiveTab('dashboard')} 
-              className={`flex-1 md:flex-initial px-5 sm:px-7 py-1.5 rounded-lg transition text-center ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-md' : theme.textMuted}`}
+              className={`flex-1 md:flex-initial px-5 sm:px-7 py-1.5 rounded-lg transition text-center ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-md' : theme.pillInactive}`}
             >
               {t.dashboard}
             </button>
             <button 
               onClick={() => setActiveTab('stations')} 
-              className={`flex-1 md:flex-initial px-5 sm:px-7 py-1.5 rounded-lg transition text-center ${activeTab === 'stations' ? 'bg-blue-600 text-white shadow-md' : theme.textMuted}`}
+              className={`flex-1 md:flex-initial px-5 sm:px-7 py-1.5 rounded-lg transition text-center ${activeTab === 'stations' ? 'bg-blue-600 text-white shadow-md' : theme.pillInactive}`}
             >
               {t.stations}
             </button>
           </div>
 
-          {/* Tombol Bahasa & Mode khusus tampilan Mobile agar sejajar */}
+          {/* Tombol Bahasa & Mode khusus tampilan Mobile */}
           <div className="flex md:hidden items-center gap-1.5 shrink-0">
             <button onClick={() => setLang(lang === 'id' ? 'en' : 'id')} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border font-bold text-xs ${theme.bgCard} hover:border-blue-500 transition`}>
               <Globe size={13} className="text-blue-500" /> {lang.toUpperCase()}
@@ -392,8 +394,8 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden relative w-full h-full">
         {activeTab === 'dashboard' && (
           <div className="relative flex-1 w-full h-full overflow-y-auto">
-            {/* BACKGROUND PETA PENUH SATU LAYAR UTUH DARI ATAS SAMPAI BAWAH */}
-            <div className="fixed inset-0 w-screen h-screen z-0 opacity-35 dark:opacity-20 pointer-events-none filter saturate-150">
+            {/* BACKGROUND PETA PENUH */}
+            <div className={`fixed inset-0 w-screen h-screen z-0 pointer-events-none filter saturate-150 transition-opacity duration-300 ${isDark ? 'opacity-20' : 'opacity-35'}`}>
               <MapContainer 
                 center={[-2.5, 118.0]} 
                 zoom={5} 
@@ -412,7 +414,8 @@ export default function App() {
             
             <div className="relative z-10 px-4 sm:px-8 md:px-12 py-8 sm:py-12 flex flex-col items-center">
               <div className="max-w-4xl w-full text-center mb-10 sm:mb-14">
-                <div className="inline-flex items-center justify-center mb-5 p-3.5 bg-white/90 dark:bg-slate-800/90 rounded-3xl shadow-xl border border-white dark:border-slate-700 backdrop-blur-md">
+                {/* KOTAK LOGO TENGAH (Mengikuti isDark) */}
+                <div className={`inline-flex items-center justify-center mb-5 p-4 rounded-3xl shadow-xl border backdrop-blur-md transition-colors duration-300 ${isDark ? 'bg-slate-900/90 border-slate-700' : 'bg-white/95 border-slate-200/80'}`}>
                    <img src="/logo.png" alt="Logo Large" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md" />
                 </div>
                 <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold py-1.5 leading-normal tracking-tight bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-500 bg-clip-text text-transparent">
@@ -429,15 +432,15 @@ export default function App() {
                 <h2 className="text-lg sm:text-2xl font-bold mb-6 text-center">{t.contactUs}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 w-full">
                   <a href="mailto:registerundip@gmail.com" className={`p-5 sm:p-6 rounded-2xl border flex flex-col items-center justify-center gap-3 text-center shadow-md hover:shadow-xl hover:-translate-y-1 transition-all hover:border-blue-500 ${theme.bgCard}`}>
-                    <div className="bg-blue-100 dark:bg-blue-900/50 p-3.5 sm:p-4 rounded-2xl text-blue-600"><Mail size={24} className="sm:w-7 sm:h-7" /></div>
+                    <div className={`p-3.5 sm:p-4 rounded-2xl text-blue-600 ${isDark ? 'bg-blue-900/40' : 'bg-blue-100'}`}><Mail size={24} className="sm:w-7 sm:h-7" /></div>
                     <div><h3 className="font-bold text-sm sm:text-base">Email</h3><p className={`text-xs sm:text-sm mt-1 break-all ${theme.textMuted}`}>registerundip@gmail.com</p></div>
                   </a>
                   <a href="https://instagram.com/register_undip" target="_blank" rel="noreferrer" className={`p-5 sm:p-6 rounded-2xl border flex flex-col items-center justify-center gap-3 text-center shadow-md hover:shadow-xl hover:-translate-y-1 transition-all hover:border-pink-500 ${theme.bgCard}`}>
-                    <div className="bg-pink-100 dark:bg-pink-900/50 p-3.5 sm:p-4 rounded-2xl text-pink-600"><Instagram size={24} className="sm:w-7 sm:h-7" /></div>
+                    <div className={`p-3.5 sm:p-4 rounded-2xl text-pink-600 ${isDark ? 'bg-pink-900/40' : 'bg-pink-100'}`}><Instagram size={24} className="sm:w-7 sm:h-7" /></div>
                     <div><h3 className="font-bold text-sm sm:text-base">Instagram</h3><p className={`text-xs sm:text-sm mt-1 ${theme.textMuted}`}>@register_undip</p></div>
                   </a>
                   <a href="https://wa.me/6283865131284" target="_blank" rel="noreferrer" className={`p-5 sm:p-6 rounded-2xl border flex flex-col items-center justify-center gap-3 text-center shadow-md hover:shadow-xl hover:-translate-y-1 transition-all hover:border-green-500 ${theme.bgCard}`}>
-                    <div className="bg-green-100 dark:bg-green-900/50 p-3.5 sm:p-4 rounded-2xl text-green-600"><MessageCircle size={24} className="sm:w-7 sm:h-7" /></div>
+                    <div className={`p-3.5 sm:p-4 rounded-2xl text-green-600 ${isDark ? 'bg-green-900/40' : 'bg-green-100'}`}><MessageCircle size={24} className="sm:w-7 sm:h-7" /></div>
                     <div><h3 className="font-bold text-sm sm:text-base">WhatsApp</h3><p className={`text-xs sm:text-sm mt-1 ${theme.textMuted}`}>083865131284 (Dava)</p></div>
                   </a>
                 </div>
@@ -465,16 +468,16 @@ export default function App() {
                   <button 
                     onClick={fetchStationsFromServer} 
                     title="Sinkronisasi Database"
-                    className={`p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-blue-500 ${isSyncing ? 'animate-spin' : ''}`}
+                    className={`p-1.5 rounded-xl transition ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-200'} text-blue-500 ${isSyncing ? 'animate-spin' : ''}`}
                   >
                     <RefreshCw size={16}/>
                   </button>
-                  <button onClick={() => setIsSidebarOpen(false)} className="p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500"><X size={18}/></button>
+                  <button onClick={() => setIsSidebarOpen(false)} className={`p-1.5 rounded-xl transition ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-200'} text-slate-500`}><X size={18}/></button>
                 </div>
               </div>
 
               {dbError && (
-                <div className="mx-4 mt-3 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-[11px]">
+                <div className="mx-4 mt-3 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 text-[11px]">
                   Koneksi DB: {dbError} (Mode Offline)
                 </div>
               )}
@@ -487,7 +490,7 @@ export default function App() {
                     value={searchQuery} 
                     onChange={(e) => setSearchQuery(e.target.value)} 
                     placeholder={t.searchPlaceholder} 
-                    className={`w-full pl-9 pr-8 py-2.5 text-xs sm:text-sm rounded-xl border placeholder:text-slate-400 focus:placeholder:text-transparent focus:outline-none focus:border-blue-500 transition ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-100/80 border-slate-200'}`} 
+                    className={`w-full pl-9 pr-8 py-2.5 text-xs sm:text-sm rounded-xl border placeholder:text-slate-400 focus:placeholder:text-transparent focus:outline-none focus:border-blue-500 transition ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-100/80 border-slate-200 text-slate-800'}`} 
                   />
                   {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600"><X size={14} /></button>}
                 </div>
@@ -519,7 +522,7 @@ export default function App() {
                   ) : (
                     <div className="flex flex-col gap-2">
                       <button onClick={() => setIsUploadModalOpen(true)} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-md text-sm"><Upload size={16} /> {t.uploadDataBtn}</button>
-                      <button onClick={() => setIsLoginModalOpen(true)} className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-sm text-sm border ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-100'}`}><User size={16} /> {t.adminLogin}</button>
+                      <button onClick={() => setIsLoginModalOpen(true)} className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-sm text-sm border ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-white' : 'bg-white border-slate-200 hover:bg-slate-100 text-slate-700'}`}><User size={16} /> {t.adminLogin}</button>
                     </div>
                   )}
                 </div>
@@ -529,9 +532,21 @@ export default function App() {
             {/* AREA PETA LEAFLET */}
             <div className="w-full h-full relative z-0">
               <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`absolute top-3 left-3 sm:top-4 sm:left-4 z-[999] p-2.5 rounded-2xl shadow-xl border focus:outline-none transition-all ${theme.bgCard} hover:text-blue-500 active:scale-95`}><Menu size={20} className="sm:w-6 sm:h-6" /></button>
-              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[999] flex items-center gap-1 p-1 rounded-2xl shadow-xl border backdrop-blur-md bg-white/90 dark:bg-slate-900/90 border-slate-200 dark:border-slate-800">
-                <button onClick={() => setCurrentBasemap('satellite')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${currentBasemap === 'satellite' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'}`}><MapIcon size={14} /> {t.satellitelayer}</button>
-                <button onClick={() => setCurrentBasemap('osm')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${currentBasemap === 'osm' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'}`}><Layers size={14} /> {t.osmlayer}</button>
+              
+              {/* PILIHAN JENIS MAP (Mengikuti isDark) */}
+              <div className={`absolute top-3 right-3 sm:top-4 sm:right-4 z-[999] flex items-center gap-1 p-1 rounded-2xl shadow-xl border backdrop-blur-md transition-colors duration-300 ${isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/95 border-slate-200/80'}`}>
+                <button 
+                  onClick={() => setCurrentBasemap('satellite')} 
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${currentBasemap === 'satellite' ? 'bg-blue-600 text-white shadow-md' : theme.pillInactive}`}
+                >
+                  <MapIcon size={14} /> {t.satellitelayer}
+                </button>
+                <button 
+                  onClick={() => setCurrentBasemap('osm')} 
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${currentBasemap === 'osm' ? 'bg-blue-600 text-white shadow-md' : theme.pillInactive}`}
+                >
+                  <Layers size={14} /> {t.osmlayer}
+                </button>
               </div>
 
               <MapContainer 
@@ -608,7 +623,7 @@ export default function App() {
                 <label className="block font-bold mb-2 opacity-80">{t.reqDataTypes}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {((requestMapData && requestMapData.availableDataTypes && requestMapData.availableDataTypes.length > 0) ? requestMapData.availableDataTypes : dataTypes).map(type => (
-                    <label key={type} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition ${requestForm.requestedTypes.includes(type) ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/30 dark:border-blue-500 dark:text-blue-300' : (isDark ? 'bg-slate-900 border-slate-700 hover:border-slate-500' : 'bg-slate-50 border-slate-200 hover:border-slate-300')}`}>
+                    <label key={type} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition ${requestForm.requestedTypes.includes(type) ? (isDark ? 'bg-blue-900/30 border-blue-500 text-blue-300' : 'bg-blue-50 border-blue-500 text-blue-700') : (isDark ? 'bg-slate-900 border-slate-700 hover:border-slate-500' : 'bg-slate-50 border-slate-200 hover:border-slate-300')}`}>
                       <input type="checkbox" checked={requestForm.requestedTypes.includes(type)} onChange={() => setRequestForm(prev => ({ ...prev, requestedTypes: prev.requestedTypes.includes(type) ? prev.requestedTypes.filter(t => t !== type) : [...prev.requestedTypes, type] }))} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4" />
                       <span className="font-medium text-xs">{type}</span>
                     </label>
@@ -647,7 +662,7 @@ export default function App() {
                 <label className="block font-bold mb-2 opacity-80">{t.availableData}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {dataTypes.map(type => (
-                    <label key={type} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition ${uploadForm.types.includes(type) ? 'bg-emerald-50 border-emerald-500 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-500 dark:text-emerald-300' : (isDark ? 'bg-slate-900 border-slate-700 hover:border-slate-500' : 'bg-slate-50 border-slate-200 hover:border-slate-300')}`}>
+                    <label key={type} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition ${uploadForm.types.includes(type) ? (isDark ? 'bg-emerald-900/30 border-emerald-500 text-emerald-300' : 'bg-emerald-50 border-emerald-500 text-emerald-700') : (isDark ? 'bg-slate-900 border-slate-700 hover:border-slate-500' : 'bg-slate-50 border-slate-200 hover:border-slate-300')}`}>
                       <input type="checkbox" checked={uploadForm.types.includes(type)} onChange={() => setUploadForm(prev => ({ ...prev, types: prev.types.includes(type) ? prev.types.filter(t => t !== type) : [...prev.types, type] }))} className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4" />
                       <span className="font-medium text-xs">{type}</span>
                     </label>
@@ -741,7 +756,7 @@ export default function App() {
                   {(modalData.availableDataTypes && modalData.availableDataTypes.length > 0) ? (
                     <div className="flex flex-wrap gap-1.5">
                       {modalData.availableDataTypes.map(type => (
-                        <span key={type} className="inline-flex items-center gap-1 bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 px-2 py-0.5 rounded-md text-[10px] font-bold"><CheckSquare size={10} /> {type}</span>
+                        <span key={type} className={`inline-flex items-center gap-1 border px-2 py-0.5 rounded-md text-[10px] font-bold ${isDark ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' : 'bg-teal-50 text-teal-700 border-teal-200'}`}><CheckSquare size={10} /> {type}</span>
                       ))}
                     </div>
                   ) : <span className="opacity-50 italic">-</span>}
@@ -751,7 +766,7 @@ export default function App() {
               <div className={`grid grid-cols-3 border-b pb-2 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}><span className="opacity-70">Pengelola</span><span className="col-span-2">{modalData.owner}</span></div>
               <div className="grid grid-cols-3"><span className="opacity-70">Deskripsi</span><span className="col-span-2 leading-relaxed">{modalData.description}</span></div>
               
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
+              <div className={`pt-3 border-t flex flex-col gap-2 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                 <button onClick={() => openRequestModal(modalData)} className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-md"><Send size={15} /> {t.requestDataBtn}</button>
                 {isAdmin && (
                   <button onClick={() => handleDeleteStation(modalData)} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-md"><Trash2 size={15} /> {t.deleteBtn}</button>
