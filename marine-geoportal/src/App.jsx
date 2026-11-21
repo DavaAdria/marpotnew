@@ -61,7 +61,12 @@ const BASEMAPS = {
   }
 };
 
-// DATA AWAL (Contoh Karimunjawa sudah memakai Poligon GeoJSON)
+// Batas 1 Dunia untuk Leaflet
+const WORLD_BOUNDS = [
+  [-90, -180],
+  [90, 180]
+];
+
 const initialData = [
   { 
     id: 1, name: "Kawasan Konservasi Mangrove Karimunjawa", lat: -5.8450, lng: 110.4350, 
@@ -99,7 +104,7 @@ const dict = {
     loginSuccess: "Login Berhasil! Mode Administrator Diaktifkan.", loginFail: "Akses Ditolak: Username atau Password salah!",
     saveSuccess: "Berhasil! Data peta tersimpan dengan aman.", deleteBtn: "Hapus Data Peta",
     deleteConfirm: "Apakah Anda yakin ingin menghapus data peta ini?", deleteSuccess: "Data peta berhasil dihapus.",
-    searchPlaceholder: "Cari nama data, lokasi, atau pengelola...",
+    searchPlaceholder: "Cari nama data...",
     basemapTitle: "Mode Peta", satellitelayer: "Satelit Esri", osmlayer: "OpenStreetMap",
     requestDataBtn: "Minta Akses Data Ini", requestModalTitle: "Form Permintaan Akses Data Geospasial",
     reqName: "Nama Lengkap", reqInst: "Instansi / Universitas / Organisasi", reqEmail: "Email Resmi",
@@ -110,21 +115,29 @@ const dict = {
     uploadDesc: "Deskripsi Singkat / Abstrak"
   },
   en: {
-    // English definitions omitted for brevity, fallback to exact same UI logic
     title: "Register Geoportal (Re-Port)", dashboard: "Dashboard", stations: "Interactive Map",
     adminLogin: "Admin Login", logout: "Logout", addData: "Add Map Data",
-    aboutTitle: "About Register Geoportal", aboutSub: "Oceanographic Platform", aboutDesc: "Desc...",
-    contactUs: "Contact Us", filterTitle: "Filter", showing: "Showing", activeSpots: "active spots",
-    mapCategory: "Category", fullMeta: "View Full Metadata",
-    modalAddTitle: "Add Map Data", saveBtn: "Save Map", nameLabel: "Data Name", lat: "Lat", lng: "Lng",
-    category: "Category", owner: "Owner", desc: "Desc", photo: "Photo URL",
+    aboutTitle: "About Register Geoportal (Re-Port)", aboutSub: "Interactive Oceanographic Monitoring Platform",
+    aboutDesc: "Register Geoportal (Re-port) is a portal containing data on marine geospatial information designed by Register Undip as learning and educational material for students regarding remote sensing and geographic information systems within the marine scope.",
+    contactUs: "Contact Us", filterTitle: "Map Data Filter", showing: "Showing", activeSpots: "active data points",
+    mapCategory: "Mapping Category", fullMeta: "View Full Metadata",
+    modalAddTitle: "Input New Map Data", saveBtn: "Save & Display Map",
+    nameLabel: "Map Data / Project Name", lat: "Latitude (Center Point)", lng: "Longitude (Center Point)",
+    category: "Category", owner: "Data Manager", desc: "Map Description", photo: "Photo/Attachment Link (GDrive URL)",
     geoJsonLabel: "GeoJSON Format (Optional - For Area/Polygon)",
-    availableData: "Available Data", reqDataTypes: "Requested Data", loginSuccess: "Success", loginFail: "Fail",
-    saveSuccess: "Saved", deleteBtn: "Delete", deleteConfirm: "Sure?", deleteSuccess: "Deleted", searchPlaceholder: "Search...",
-    basemapTitle: "Mode", satellitelayer: "Satellite", osmlayer: "OSM",
-    requestDataBtn: "Request", requestModalTitle: "Request Form", reqName: "Name", reqInst: "Institution", reqEmail: "Email",
-    reqPurpose: "Purpose", reqDataSelect: "Data", sendReqWhatsapp: "Send WA", sendReqEmail: "Send Email",
-    uploadDataBtn: "Upload", uploadModalTitle: "Upload Form", uploadDataName: "Title", uploadLink: "Link", uploadDesc: "Desc"
+    availableData: "Available Data Types", reqDataTypes: "Requested Data Types",
+    loginSuccess: "Login Successful! Administrator Mode Activated.", loginFail: "Access Denied: Incorrect Username or Password!",
+    saveSuccess: "Success! Map data safely stored.", deleteBtn: "Delete Map Data",
+    deleteConfirm: "Are you sure you want to delete this map data?", deleteSuccess: "Map data deleted successfully.",
+    searchPlaceholder: "Search data name...",
+    basemapTitle: "Map Mode", satellitelayer: "Esri Satellite", osmlayer: "OpenStreetMap",
+    requestDataBtn: "Request Access to Data", requestModalTitle: "Geospatial Data Access Request Form",
+    reqName: "Full Name", reqInst: "Institution / University / Organization", reqEmail: "Official Email",
+    reqPurpose: "Purpose of Data Request", reqDataSelect: "Requested Map Dataset Title",
+    sendReqWhatsapp: "Send via WhatsApp", sendReqEmail: "Send via Email",
+    uploadDataBtn: "Upload Data", uploadModalTitle: "Data Upload Request Form",
+    uploadDataName: "Uploaded Data Title", uploadLink: "Your File / GDrive Link",
+    uploadDesc: "Short Description / Abstract"
   }
 };
 
@@ -162,31 +175,35 @@ export default function App() {
     name: '', inst: '', email: '', title: '', category: 'Ocean Current', types: [], link: '', description: ''
   });
 
-  useEffect(() => {
+  // SINKRONISASI DATA DARI BACKEND AGAR SAMA DI SEMUA DEVICE
+  const fetchStationsFromServer = async () => {
     const savedData = localStorage.getItem('marineGeoportalData');
     const localStations = savedData ? JSON.parse(savedData) : null;
 
-    fetch('https://report-backend.vercel.app/api/stations')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.length > 0) {
-          setStations(data);
-          localStorage.setItem('marineGeoportalData', JSON.stringify(data));
-        } else if (localStations && localStations.length > 0) {
-          setStations(localStations);
-        } else {
-          setStations(initialData);
-          localStorage.setItem('marineGeoportalData', JSON.stringify(initialData));
-        }
-      })
-      .catch(() => {
-        if (localStations && localStations.length > 0) {
-          setStations(localStations);
-        } else {
-          setStations(initialData);
-          localStorage.setItem('marineGeoportalData', JSON.stringify(initialData));
-        }
+    try {
+      const res = await fetch('https://report-backend.vercel.app/api/stations', {
+        cache: 'no-store'
       });
+      if (!res.ok) throw new Error('Network response was not ok');
+      const data = await res.json();
+      
+      if (Array.isArray(data)) {
+        setStations(data);
+        localStorage.setItem('marineGeoportalData', JSON.stringify(data));
+      }
+    } catch (err) {
+      console.warn('Gagal mengambil data terbaru dari server, menggunakan cache lokal:', err);
+      if (localStations && localStations.length > 0) {
+        setStations(localStations);
+      } else {
+        setStations(initialData);
+        localStorage.setItem('marineGeoportalData', JSON.stringify(initialData));
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchStationsFromServer();
   }, []);
 
   useEffect(() => { if (activeTab === 'stations') setIsSidebarOpen(false); }, [activeTab]);
@@ -195,18 +212,14 @@ export default function App() {
     setActiveFilters(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
   };
 
-  // FUNGSI FILTER DIPERBAIKI: HANYA MENAMPILKAN DATA DENGAN KOORDINAT VALID (Atau ada GeoJSON)
+  // FILTER DATA: HANYA NAMA DATA & VALIDASI KOORDINAT / GEOJSON
   const filteredData = stations.filter(d => {
-    const hasValidCoords = (d.lat != null && d.lng != null && !isNaN(d.lat) && !isNaN(d.lng)) || d.geoJson;
+    const hasValidCoords = (d.lat != null && d.lng != null && !isNaN(Number(d.lat)) && !isNaN(Number(d.lng))) || (d.geoJson && d.geoJson.trim() !== '');
     if (!hasValidCoords) return false;
 
     const matchCat = activeFilters.includes(d.category);
     const q = searchQuery.toLowerCase().trim();
-    const matchSearch = q === '' || 
-      (d.name && d.name.toLowerCase().includes(q)) ||
-      (d.owner && d.owner.toLowerCase().includes(q)) ||
-      (d.category && d.category.toLowerCase().includes(q)) ||
-      (d.description && d.description.toLowerCase().includes(q));
+    const matchSearch = q === '' || (d.name && d.name.toLowerCase().includes(q));
     
     return matchCat && matchSearch;
   });
@@ -240,15 +253,23 @@ export default function App() {
       lat: parseFloat(formData.lat), lng: parseFloat(formData.lng), imageUrl: processedImageUrl 
     };
 
-    const updatedStations = [...stations, newStation];
-    setStations(updatedStations);
-    localStorage.setItem('marineGeoportalData', JSON.stringify(updatedStations));
-
     try {
-      await fetch('https://report-backend.vercel.app/api/stations', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newStation)
+      const res = await fetch('https://report-backend.vercel.app/api/stations', {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(newStation)
       });
-    } catch (err) { console.log('Tersimpan lokal', err); }
+      if (res.ok) {
+        await fetchStationsFromServer();
+      } else {
+        throw new Error('Server gagal menyimpan');
+      }
+    } catch (err) { 
+      console.log('Tersimpan lokal', err);
+      const updatedStations = [...stations, newStation];
+      setStations(updatedStations);
+      localStorage.setItem('marineGeoportalData', JSON.stringify(updatedStations));
+    }
 
     setIsAddModalOpen(false);
     setFormData({ name: '', lat: '', lng: '', category: 'Ocean Current', owner: '', description: '', method: 'Sensor Lapangan', status: 'Aktif', imageUrl: '', availableDataTypes: [], geoJson: '' });
@@ -258,13 +279,18 @@ export default function App() {
 
   const handleDeleteStation = async (targetId) => {
     if (!window.confirm(t.deleteConfirm)) return;
+    
     const updatedStations = stations.filter(s => s.id !== targetId && s._id !== targetId);
     setStations(updatedStations);
     localStorage.setItem('marineGeoportalData', JSON.stringify(updatedStations));
     if (modalData && (modalData.id === targetId || modalData._id === targetId)) setModalData(null);
 
-    try { await fetch(`https://report-backend.vercel.app/api/stations/${targetId}`, { method: 'DELETE' });
-    } catch (err) { console.log('Terhapus lokal', err); }
+    try { 
+      await fetch(`https://report-backend.vercel.app/api/stations/${targetId}`, { method: 'DELETE' });
+      await fetchStationsFromServer();
+    } catch (err) { 
+      console.log('Terhapus lokal', err); 
+    }
     alert(t.deleteSuccess);
   };
 
@@ -311,7 +337,6 @@ export default function App() {
     textMuted: isDark ? 'text-slate-400' : 'text-slate-500',
   };
 
-  // Komponen Reusable Untuk Popup (Dipakai di Marker & GeoJSON)
   const renderPopupContent = (data) => (
     <div className={`w-56 sm:w-64 ${isDark ? 'bg-slate-900 text-white' : 'bg-white'}`}>
       <div className="mb-2 sm:mb-3 relative">
@@ -354,8 +379,20 @@ export default function App() {
         {activeTab === 'dashboard' && (
           <div className="relative flex-1 w-full h-full overflow-y-auto">
             <div className="absolute inset-0 z-0 opacity-40 dark:opacity-25 pointer-events-none filter saturate-150">
-              <MapContainer center={[-2.5, 118.0]} zoom={5} zoomControl={false} dragging={false} scrollWheelZoom={false} doubleClickZoom={false} touchZoom={false} className="w-full h-full">
-                <TileLayer attribution='&copy; Esri' url={BASEMAPS.satellite.url} />
+              <MapContainer 
+                center={[-2.5, 118.0]} 
+                zoom={5} 
+                minZoom={2}
+                maxBounds={WORLD_BOUNDS}
+                maxBoundsViscosity={1.0}
+                zoomControl={false} 
+                dragging={false} 
+                scrollWheelZoom={false} 
+                doubleClickZoom={false} 
+                touchZoom={false} 
+                className="w-full h-full"
+              >
+                <TileLayer attribution='&copy; Esri' url={BASEMAPS.satellite.url} noWrap={true} />
               </MapContainer>
             </div>
             <div className="relative z-10 p-4 sm:p-8 md:p-12 flex flex-col items-center min-h-full">
@@ -390,18 +427,30 @@ export default function App() {
 
         {activeTab === 'stations' && (
           <div className="relative w-full h-full overflow-hidden">
-            {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="md:hidden fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-[1999]"/>}
+            {/* BACKDROP MOBILE (z-[1999], di bawah sidebar z-[2500]) */}
+            {isSidebarOpen && (
+              <div 
+                onClick={() => setIsSidebarOpen(false)} 
+                className="md:hidden fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-[1999]"
+              />
+            )}
             
-            {/* SIDEBAR */}
-            <aside className={`absolute top-0 bottom-0 left-0 z-[1000] w-72 sm:w-80 flex flex-col shadow-2xl shrink-0 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${theme.bgSidebar}`}>
+            {/* SIDEBAR (z-[2500] agar berada di atas backdrop & header saat mobile) */}
+            <aside className={`fixed md:absolute top-0 bottom-0 left-0 z-[2500] w-72 sm:w-80 flex flex-col shadow-2xl shrink-0 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${theme.bgSidebar}`}>
               <div className={`p-4 sm:p-5 border-b flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                 <div className="flex items-center gap-2"><Filter size={18} className="text-blue-500" /><h2 className="font-bold text-base sm:text-lg">{t.filterTitle}</h2></div>
                 <button onClick={() => setIsSidebarOpen(false)} className="p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500"><X size={18}/></button>
               </div>
               <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-5">
                 <div className="relative flex items-center">
-                  <Search size={16} className="absolute left-3 text-slate-400" />
-                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t.searchPlaceholder} className={`w-full pl-9 pr-8 py-2.5 text-xs sm:text-sm rounded-xl border focus:outline-none focus:border-blue-500 transition ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-100/80 border-slate-200'}`} />
+                  <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
+                  <input 
+                    type="text" 
+                    value={searchQuery} 
+                    onChange={(e) => setSearchQuery(e.target.value)} 
+                    placeholder={t.searchPlaceholder} 
+                    className={`w-full pl-9 pr-8 py-2.5 text-xs sm:text-sm rounded-xl border placeholder:text-slate-400 focus:placeholder:text-transparent focus:outline-none focus:border-blue-500 transition ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-100/80 border-slate-200'}`} 
+                  />
                   {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600"><X size={14} /></button>}
                 </div>
                 <div>
@@ -439,7 +488,7 @@ export default function App() {
               </div>
             </aside>
 
-            {/* AREA PETA LEAFLET */}
+            {/* AREA PETA LEAFLET (1 DUNIA PENUH) */}
             <div className="w-full h-full relative z-0">
               <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`absolute top-3 left-3 sm:top-4 sm:left-4 z-[999] p-2.5 rounded-2xl shadow-xl border focus:outline-none transition-all ${theme.bgCard} hover:text-blue-500 active:scale-95`}><Menu size={20} className="sm:w-6 sm:h-6" /></button>
               <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[999] flex items-center gap-1 p-1 rounded-2xl shadow-xl border backdrop-blur-md bg-white/90 dark:bg-slate-900/90 border-slate-200 dark:border-slate-800">
@@ -447,10 +496,25 @@ export default function App() {
                 <button onClick={() => setCurrentBasemap('osm')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${currentBasemap === 'osm' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'}`}><Layers size={14} /> {t.osmlayer}</button>
               </div>
 
-              <MapContainer center={[-5.8450, 110.4350]} zoom={6} zoomControl={false} className="w-full h-full z-0" style={{ width: '100%', height: '100%' }}>
+              <MapContainer 
+                center={[-2.5, 118.0]} 
+                zoom={5} 
+                minZoom={2}
+                maxBounds={WORLD_BOUNDS}
+                maxBoundsViscosity={1.0}
+                zoomControl={false} 
+                className="w-full h-full z-0" 
+                style={{ width: '100%', height: '100%' }}
+              >
                 <MapResizer isSidebarOpen={isSidebarOpen} />
                 <ZoomControl position="bottomright" />
-                <TileLayer key={currentBasemap} attribution={BASEMAPS[currentBasemap].attribution} url={BASEMAPS[currentBasemap].url} />
+                <TileLayer 
+                  key={currentBasemap} 
+                  attribution={BASEMAPS[currentBasemap].attribution} 
+                  url={BASEMAPS[currentBasemap].url}
+                  noWrap={true}
+                  bounds={WORLD_BOUNDS}
+                />
                 
                 {filteredData.map(data => {
                   let parsedGeoJson = null;
@@ -461,7 +525,6 @@ export default function App() {
 
                   return (
                     <React.Fragment key={data.id || data._id}>
-                      {/* JIKA ADA GEOJSON -> TAMPILKAN POLIGON AREA (Kaya Sidako) */}
                       {parsedGeoJson ? (
                         <GeoJSON 
                           data={parsedGeoJson} 
@@ -472,8 +535,7 @@ export default function App() {
                           </Popup>
                         </GeoJSON>
                       ) : (
-                        /* JIKA TIDAK ADA GEOJSON -> TAMPILKAN PIN MARKER BIASA */
-                        <Marker position={[data.lat, data.lng]}>
+                        <Marker position={[Number(data.lat), Number(data.lng)]}>
                           <Popup className={`rounded-2xl p-0 overflow-hidden ${isDark ? 'dark-popup' : ''}`}>
                             {renderPopupContent(data)}
                           </Popup>
@@ -592,7 +654,6 @@ export default function App() {
                 <div><label className="block text-xs font-bold mb-1 opacity-70">{t.lng}</label><input required type="number" step="any" name="lng" value={formData.lng} onChange={handleInputChange} className={`w-full p-2.5 rounded-xl text-sm border focus:outline-none focus:border-cyan-500 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} /></div>
               </div>
 
-              {/* INPUT GEOJSON BARU */}
               <div>
                 <label className="block text-xs font-bold mb-1 text-cyan-500">{t.geoJsonLabel}</label>
                 <textarea name="geoJson" value={formData.geoJson} onChange={handleInputChange} className={`w-full p-2.5 rounded-xl text-xs border focus:outline-none focus:border-cyan-500 h-20 font-mono ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-100 border-slate-200'}`} placeholder='{"type": "FeatureCollection", ...}' />
