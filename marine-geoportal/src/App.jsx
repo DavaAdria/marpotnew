@@ -156,7 +156,6 @@ export default function App() {
     name: '', inst: '', email: '', title: '', category: 'Ocean Current', types: [], link: '', description: ''
   });
 
-  // SINKRONISASI DATABASE PUSAT
   const fetchStationsFromServer = async () => {
     setIsSyncing(true);
     setDbError(null);
@@ -169,7 +168,6 @@ export default function App() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = await res.json();
       
-      // Mendukung response berupa Array langsung maupun Object { data: [...] } / { stations: [...] }
       const list = Array.isArray(raw) ? raw : (raw.data || raw.stations || []);
       setStations(list);
       localStorage.setItem('marineGeoportalData', JSON.stringify(list));
@@ -312,7 +310,7 @@ export default function App() {
   };
 
   const theme = {
-    bgApp: isDark ? 'bg-slate-950' : 'bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-100',
+    bgApp: isDark ? 'bg-slate-950' : 'bg-slate-50',
     textMain: isDark ? 'text-slate-100' : 'text-slate-800',
     bgNav: isDark ? 'bg-slate-950/90 border-slate-800 backdrop-blur-md' : 'bg-white/90 border-slate-200/80 backdrop-blur-md',
     bgCard: isDark ? 'bg-slate-900/90 border-slate-800 text-slate-200 backdrop-blur-md' : 'bg-white/90 border-slate-200/80 text-slate-700 shadow-lg shadow-blue-500/5 backdrop-blur-md',
@@ -342,8 +340,9 @@ export default function App() {
 
   return (
     <div className={`flex flex-col h-[100dvh] w-screen overflow-hidden font-sans transition-colors duration-300 ${theme.bgApp} ${theme.textMain}`}>
-      {/* HEADER */}
-      <header className={`${theme.bgNav} border-b px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col md:flex-row gap-2 md:gap-4 justify-between items-center z-[1000] shadow-sm w-full shrink-0`}>
+      {/* HEADER: KIRI LOGO | TENGAH PILIHAN HALAMAN | KANAN BAHASA & MODE */}
+      <header className={`${theme.bgNav} border-b px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col md:grid md:grid-cols-3 gap-2 md:gap-4 items-center z-[1000] shadow-sm w-full shrink-0`}>
+        {/* Kolom 1: Logo & Judul */}
         <div className="flex items-center justify-center md:justify-start gap-2.5 shrink-0">
           <img src="/logo.png" alt="Register Undip Logo" className="w-7 h-7 sm:w-9 sm:h-9 object-contain drop-shadow-sm" />
           <h1 className="text-base sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-500 bg-clip-text text-transparent">
@@ -351,23 +350,25 @@ export default function App() {
           </h1>
         </div>
 
-        <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-2">
+        {/* Kolom 2: Pilihan Halaman di Tengah (Desktop) + Bahasa & Mode sejajar di Mobile */}
+        <div className="flex items-center justify-between md:justify-center w-full gap-2">
           <div className="flex flex-1 md:flex-initial bg-slate-200/60 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-bold gap-1">
             <button 
               onClick={() => setActiveTab('dashboard')} 
-              className={`flex-1 md:flex-initial px-4 sm:px-5 py-1.5 rounded-lg transition text-center ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-md' : theme.textMuted}`}
+              className={`flex-1 md:flex-initial px-5 sm:px-7 py-1.5 rounded-lg transition text-center ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-md' : theme.textMuted}`}
             >
               {t.dashboard}
             </button>
             <button 
               onClick={() => setActiveTab('stations')} 
-              className={`flex-1 md:flex-initial px-4 sm:px-5 py-1.5 rounded-lg transition text-center ${activeTab === 'stations' ? 'bg-blue-600 text-white shadow-md' : theme.textMuted}`}
+              className={`flex-1 md:flex-initial px-5 sm:px-7 py-1.5 rounded-lg transition text-center ${activeTab === 'stations' ? 'bg-blue-600 text-white shadow-md' : theme.textMuted}`}
             >
               {t.stations}
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Tombol Bahasa & Mode khusus tampilan Mobile agar sejajar */}
+          <div className="flex md:hidden items-center gap-1.5 shrink-0">
             <button onClick={() => setLang(lang === 'id' ? 'en' : 'id')} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border font-bold text-xs ${theme.bgCard} hover:border-blue-500 transition`}>
               <Globe size={13} className="text-blue-500" /> {lang.toUpperCase()}
             </button>
@@ -376,26 +377,36 @@ export default function App() {
             </button>
           </div>
         </div>
+
+        {/* Kolom 3: Tombol Bahasa & Mode khusus tampilan Desktop */}
+        <div className="hidden md:flex items-center justify-end gap-2 shrink-0">
+          <button onClick={() => setLang(lang === 'id' ? 'en' : 'id')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-bold text-xs ${theme.bgCard} hover:border-blue-500 transition`}>
+            <Globe size={14} className="text-blue-500" /> {lang.toUpperCase()}
+          </button>
+          <button onClick={() => setIsDark(!isDark)} className={`p-2 rounded-xl border ${theme.bgCard} hover:text-blue-500 transition`}>
+            {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-slate-600" />}
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden relative w-full h-full">
         {activeTab === 'dashboard' && (
           <div className="relative flex-1 w-full h-full overflow-y-auto">
-            <div className="fixed inset-0 z-0 opacity-35 dark:opacity-20 pointer-events-none filter saturate-150">
+            {/* BACKGROUND PETA PENUH SATU LAYAR UTUH DARI ATAS SAMPAI BAWAH */}
+            <div className="fixed inset-0 w-screen h-screen z-0 opacity-35 dark:opacity-20 pointer-events-none filter saturate-150">
               <MapContainer 
                 center={[-2.5, 118.0]} 
                 zoom={5} 
-                minZoom={2}
-                maxBounds={WORLD_BOUNDS}
-                maxBoundsViscosity={1.0}
                 zoomControl={false} 
                 dragging={false} 
                 scrollWheelZoom={false} 
                 doubleClickZoom={false} 
                 touchZoom={false} 
+                attributionControl={false}
                 className="w-full h-full"
+                style={{ width: '100vw', height: '100vh' }}
               >
-                <TileLayer attribution='&copy; Esri' url={BASEMAPS.satellite.url} noWrap={true} />
+                <TileLayer url={BASEMAPS.satellite.url} />
               </MapContainer>
             </div>
             
@@ -404,7 +415,6 @@ export default function App() {
                 <div className="inline-flex items-center justify-center mb-5 p-3.5 bg-white/90 dark:bg-slate-800/90 rounded-3xl shadow-xl border border-white dark:border-slate-700 backdrop-blur-md">
                    <img src="/logo.png" alt="Logo Large" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md" />
                 </div>
-                {/* PERBAIKAN: leading-normal & py-1 agar teks gradien tidak terpotong */}
                 <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold py-1.5 leading-normal tracking-tight bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-500 bg-clip-text text-transparent">
                   {t.aboutTitle}
                 </h1>
