@@ -16,6 +16,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+const API_URL = 'https://report-backend.vercel.app/api/stations';
+
 const formatImageUrl = (url) => {
   if (!url || typeof url !== 'string') return 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&q=80';
   const trimmed = url.trim();
@@ -79,8 +81,8 @@ const dict = {
     geoJsonLabel: "Format GeoJSON (Opsional - Untuk Area/Poligon)",
     availableData: "Jenis Data Tersedia", reqDataTypes: "Pilih Jenis Data yang Diminta",
     loginSuccess: "Login Berhasil! Mode Administrator Diaktifkan.", loginFail: "Akses Ditolak: Username atau Password salah!",
-    saveSuccess: "Berhasil! Data peta tersimpan ke server pusat.", deleteBtn: "Hapus Data Peta",
-    deleteConfirm: "Apakah Anda yakin ingin menghapus data peta ini?", deleteSuccess: "Data peta berhasil dihapus dari server.",
+    saveSuccess: "Berhasil! Data peta tersimpan ke database server.", deleteBtn: "Hapus Data Peta",
+    deleteConfirm: "Apakah Anda yakin ingin menghapus data peta ini?", deleteSuccess: "Data peta berhasil dihapus dari database.",
     searchPlaceholder: "Cari nama data...",
     basemapTitle: "Mode Peta", satellitelayer: "Satelit", osmlayer: "OSM",
     requestDataBtn: "Minta Akses Data Ini", requestModalTitle: "Form Permintaan Akses Data Geospasial",
@@ -104,8 +106,8 @@ const dict = {
     geoJsonLabel: "GeoJSON Format (Optional - For Area/Polygon)",
     availableData: "Available Data Types", reqDataTypes: "Requested Data Types",
     loginSuccess: "Login Successful! Administrator Mode Activated.", loginFail: "Access Denied: Incorrect Username or Password!",
-    saveSuccess: "Success! Map data safely stored to central server.", deleteBtn: "Delete Map Data",
-    deleteConfirm: "Are you sure you want to delete this map data?", deleteSuccess: "Map data deleted from server.",
+    saveSuccess: "Success! Map data safely stored to server database.", deleteBtn: "Delete Map Data",
+    deleteConfirm: "Are you sure you want to delete this map data?", deleteSuccess: "Map data deleted from database.",
     searchPlaceholder: "Search data name...",
     basemapTitle: "Map Mode", satellitelayer: "Satellite", osmlayer: "OSM",
     requestDataBtn: "Request Access to Data", requestModalTitle: "Geospatial Data Access Request Form",
@@ -132,6 +134,7 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [stations, setStations] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [dbError, setDbError] = useState(null);
   
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -153,22 +156,26 @@ export default function App() {
     name: '', inst: '', email: '', title: '', category: 'Ocean Current', types: [], link: '', description: ''
   });
 
-  // SINKRONISASI MUTLAK DARI DATABASE SERVER
+  // SINKRONISASI DATABASE PUSAT
   const fetchStationsFromServer = async () => {
     setIsSyncing(true);
+    setDbError(null);
     try {
-      const res = await fetch(`https://report-backend.vercel.app/api/stations?t=${Date.now()}`, {
+      const res = await fetch(`${API_URL}?t=${Date.now()}`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
         cache: 'no-store'
       });
-      if (!res.ok) throw new Error('Gagal terhubung ke server database');
-      const data = await res.json();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const raw = await res.json();
       
-      if (Array.isArray(data)) {
-        setStations(data);
-        localStorage.setItem('marineGeoportalData', JSON.stringify(data));
-      }
+      // Mendukung response berupa Array langsung maupun Object { data: [...] } / { stations: [...] }
+      const list = Array.isArray(raw) ? raw : (raw.data || raw.stations || []);
+      setStations(list);
+      localStorage.setItem('marineGeoportalData', JSON.stringify(list));
     } catch (err) {
       console.error('Error sinkronisasi database:', err);
+      setDbError(err.message);
       const savedData = localStorage.getItem('marineGeoportalData');
       if (savedData) {
         setStations(JSON.parse(savedData));
@@ -232,38 +239,41 @@ export default function App() {
     };
 
     try {
-      const res = await fetch('https://report-backend.vercel.app/api/stations', {
+      const res = await fetch(API_URL, {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify(newStation)
       });
-      if (!res.ok) throw new Error('Server menolak penyimpanan data');
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Status ${res.status}: ${errText}`);
+      }
       await fetchStationsFromServer();
       alert(t.saveSuccess);
+      setIsAddModalOpen(false);
+      setFormData({ name: '', lat: '', lng: '', category: 'Ocean Current', owner: '', description: '', method: 'Sensor Lapangan', status: 'Aktif', imageUrl: '', availableDataTypes: [], geoJson: '' });
+      setActiveTab('stations');
     } catch (err) { 
-      alert('Gagal menyimpan ke server pusat. Periksa koneksi internet atau konfigurasi backend.');
+      alert(`Gagal menyimpan ke server database!\nDetail: ${err.message}`);
       console.error(err);
     }
-
-    setIsAddModalOpen(false);
-    setFormData({ name: '', lat: '', lng: '', category: 'Ocean Current', owner: '', description: '', method: 'Sensor Lapangan', status: 'Aktif', imageUrl: '', availableDataTypes: [], geoJson: '' });
-    setActiveTab('stations');
   };
 
   const handleDeleteStation = async (stationObj) => {
     if (!window.confirm(t.deleteConfirm)) return;
-    
-    // Gunakan _id dari MongoDB jika tersedia, fallback ke id lokal
     const targetId = stationObj._id || stationObj.id;
 
     try { 
-      const res = await fetch(`https://report-backend.vercel.app/api/stations/${targetId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus di server');
+      const res = await fetch(`${API_URL}/${targetId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Status ${res.status}: ${errText}`);
+      }
       if (modalData && (modalData._id === targetId || modalData.id === targetId)) setModalData(null);
       await fetchStationsFromServer();
       alert(t.deleteSuccess);
     } catch (err) { 
-      alert('Gagal menghapus data di server.');
+      alert(`Gagal menghapus di server!\nDetail: ${err.message}`);
       console.error(err); 
     }
   };
@@ -332,7 +342,7 @@ export default function App() {
 
   return (
     <div className={`flex flex-col h-[100dvh] w-screen overflow-hidden font-sans transition-colors duration-300 ${theme.bgApp} ${theme.textMain}`}>
-      {/* HEADER SEJAJAR: LOGO + JUDUL | NAVIGASI TAB + BAHASA + MODE DALAM 1 BARIS */}
+      {/* HEADER */}
       <header className={`${theme.bgNav} border-b px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col md:flex-row gap-2 md:gap-4 justify-between items-center z-[1000] shadow-sm w-full shrink-0`}>
         <div className="flex items-center justify-center md:justify-start gap-2.5 shrink-0">
           <img src="/logo.png" alt="Register Undip Logo" className="w-7 h-7 sm:w-9 sm:h-9 object-contain drop-shadow-sm" />
@@ -341,7 +351,6 @@ export default function App() {
           </h1>
         </div>
 
-        {/* BARIS KONTROL TERPADU (DASBOR, PETA, BAHASA, MODE) */}
         <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-2">
           <div className="flex flex-1 md:flex-initial bg-slate-200/60 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-bold gap-1">
             <button 
@@ -372,7 +381,7 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden relative w-full h-full">
         {activeTab === 'dashboard' && (
           <div className="relative flex-1 w-full h-full overflow-y-auto">
-            <div className="absolute inset-0 z-0 opacity-40 dark:opacity-25 pointer-events-none filter saturate-150">
+            <div className="fixed inset-0 z-0 opacity-35 dark:opacity-20 pointer-events-none filter saturate-150">
               <MapContainer 
                 center={[-2.5, 118.0]} 
                 zoom={5} 
@@ -389,16 +398,24 @@ export default function App() {
                 <TileLayer attribution='&copy; Esri' url={BASEMAPS.satellite.url} noWrap={true} />
               </MapContainer>
             </div>
-            <div className="relative z-10 p-4 sm:p-8 md:p-12 flex flex-col items-center min-h-full">
-              <div className="max-w-4xl w-full text-center mb-8 sm:mb-12">
-                <div className="inline-flex items-center justify-center mb-4 sm:mb-6 p-3 bg-white/80 dark:bg-slate-800/80 rounded-3xl shadow-xl border border-white dark:border-slate-700 backdrop-blur-md">
-                   <img src="/logo.png" alt="Logo Large" className="w-16 h-16 sm:w-24 sm:h-24 object-contain drop-shadow-md" />
+            
+            <div className="relative z-10 px-4 sm:px-8 md:px-12 py-8 sm:py-12 flex flex-col items-center">
+              <div className="max-w-4xl w-full text-center mb-10 sm:mb-14">
+                <div className="inline-flex items-center justify-center mb-5 p-3.5 bg-white/90 dark:bg-slate-800/90 rounded-3xl shadow-xl border border-white dark:border-slate-700 backdrop-blur-md">
+                   <img src="/logo.png" alt="Logo Large" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md" />
                 </div>
-                <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold mb-3 sm:mb-4 tracking-tight bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-500 bg-clip-text text-transparent">{t.aboutTitle}</h1>
-                <p className={`text-sm sm:text-xl font-medium ${theme.textMuted}`}>{t.aboutSub}</p>
-                <div className={`mt-6 sm:mt-10 p-5 sm:p-8 rounded-3xl ${theme.bgCard} shadow-2xl border text-center sm:text-left leading-relaxed text-xs sm:text-base md:text-lg max-w-full overflow-hidden`}><p className="break-words">{t.aboutDesc}</p></div>
+                {/* PERBAIKAN: leading-normal & py-1 agar teks gradien tidak terpotong */}
+                <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold py-1.5 leading-normal tracking-tight bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-500 bg-clip-text text-transparent">
+                  {t.aboutTitle}
+                </h1>
+                <p className={`text-sm sm:text-lg font-medium mt-1 ${theme.textMuted}`}>{t.aboutSub}</p>
+                
+                <div className={`mt-6 sm:mt-8 p-5 sm:p-8 rounded-3xl ${theme.bgCard} shadow-xl border text-center sm:text-left leading-relaxed text-xs sm:text-base md:text-lg max-w-full`}>
+                  <p className="break-words">{t.aboutDesc}</p>
+                </div>
               </div>
-              <div className="max-w-4xl w-full mb-12">
+
+              <div className="max-w-4xl w-full pb-12">
                 <h2 className="text-lg sm:text-2xl font-bold mb-6 text-center">{t.contactUs}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 w-full">
                   <a href="mailto:registerundip@gmail.com" className={`p-5 sm:p-6 rounded-2xl border flex flex-col items-center justify-center gap-3 text-center shadow-md hover:shadow-xl hover:-translate-y-1 transition-all hover:border-blue-500 ${theme.bgCard}`}>
@@ -445,6 +462,13 @@ export default function App() {
                   <button onClick={() => setIsSidebarOpen(false)} className="p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500"><X size={18}/></button>
                 </div>
               </div>
+
+              {dbError && (
+                <div className="mx-4 mt-3 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-[11px]">
+                  Koneksi DB: {dbError} (Mode Offline)
+                </div>
+              )}
+
               <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-5">
                 <div className="relative flex items-center">
                   <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
