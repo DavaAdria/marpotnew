@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap, GeoJSON } from 'react-leaflet';
 import { 
   Filter, Database, X, Check, Menu, Plus, LogOut, User, 
-  Globe, Moon, Sun, Mail, MessageCircle, Trash2, Search, Layers, Send, Map as MapIcon, CheckSquare, Upload, RefreshCw
+  Globe, Moon, Sun, Mail, MessageCircle, Trash2, Search, Layers, Send, Map as MapIcon, CheckSquare, Upload, RefreshCw, MapPin, Shapes, RotateCcw
 } from 'lucide-react'; 
 import { Instagram } from 'lucide-brands';
 
@@ -48,6 +48,7 @@ const categories = [
 ];
 
 const dataTypes = ["Data Mentah", "Data Olahan", "Peta", "Jurnal"];
+const geometryTypes = ["point", "geojson"];
 
 const BASEMAPS = {
   satellite: {
@@ -73,8 +74,10 @@ const dict = {
     adminLogin: "Login Admin", logout: "Keluar", addData: "Tambah Data Peta",
     aboutTitle: "Tentang Register Geoportal (Re-Port)", aboutSub: "Platform Pemantauan Oseanografi Interaktif",
     aboutDesc: "Register Geoportal (Re-port) merupakan sebuah portal yang memuat data mengenai informasi geospasial kelautan yang dirancang oleh Register Undip sebagai bahan pembelajaran dan edukasi mahasiswa mengenai penginderaan jauh dan sistem informasi geografi dalam lingkup kelautan.",
-    contactUs: "Hubungi Kami", filterTitle: "Filter Data Peta", showing: "Menampilkan", activeSpots: "titik data aktif",
-    mapCategory: "Kategori Pemetaan", fullMeta: "Lihat Metadata Penuh",
+    contactUs: "Hubungi Kami", filterTitle: "Filter Data Peta", showing: "Menampilkan", activeSpots: "data aktif",
+    mapCategory: "Kategori Pemetaan", dataTypeFilter: "Data Tersedia", geometryFilter: "Tipe Spasial",
+    geomPoint: "Titik (Point)", geomGeoJson: "Poligon / Area (GeoJSON)", resetFilter: "Reset",
+    fullMeta: "Lihat Metadata Penuh",
     modalAddTitle: "Input Data Peta Baru", saveBtn: "Simpan & Tampilkan Peta",
     nameLabel: "Nama Data / Proyek Peta", lat: "Latitude (Titik Tengah)", lng: "Longitude (Titik Tengah)",
     category: "Kategori", owner: "Pengelola Data", desc: "Deskripsi Peta", photo: "Link Foto/Lampiran Peta (URL GDrive)",
@@ -98,8 +101,10 @@ const dict = {
     adminLogin: "Admin Login", logout: "Logout", addData: "Add Map Data",
     aboutTitle: "About Register Geoportal (Re-Port)", aboutSub: "Interactive Oceanographic Monitoring Platform",
     aboutDesc: "Register Geoportal (Re-port) is a portal containing data on marine geospatial information designed by Register Undip as learning and educational material for students regarding remote sensing and geographic information systems within the marine scope.",
-    contactUs: "Contact Us", filterTitle: "Map Data Filter", showing: "Showing", activeSpots: "active data points",
-    mapCategory: "Mapping Category", fullMeta: "View Full Metadata",
+    contactUs: "Contact Us", filterTitle: "Map Data Filter", showing: "Showing", activeSpots: "active datasets",
+    mapCategory: "Mapping Category", dataTypeFilter: "Available Data", geometryFilter: "Spatial Type",
+    geomPoint: "Point Marker", geomGeoJson: "Polygon / Area (GeoJSON)", resetFilter: "Reset",
+    fullMeta: "View Full Metadata",
     modalAddTitle: "Input New Map Data", saveBtn: "Save & Display Map",
     nameLabel: "Map Data / Project Name", lat: "Latitude (Center Point)", lng: "Longitude (Center Point)",
     category: "Category", owner: "Data Manager", desc: "Map Description", photo: "Photo/Attachment Link (GDrive URL)",
@@ -126,7 +131,10 @@ export default function App() {
   const [lang, setLang] = useState('id');
   const t = dict[lang];
 
+  // STATE FILTER LENGKAP (Kategori, Data Tersedia, & Tipe Spasial Point/GeoJSON)
   const [activeFilters, setActiveFilters] = useState(categories);
+  const [activeDataTypes, setActiveDataTypes] = useState(dataTypes);
+  const [activeGeometryTypes, setActiveGeometryTypes] = useState(geometryTypes);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentBasemap, setCurrentBasemap] = useState('satellite');
   
@@ -193,15 +201,56 @@ export default function App() {
     setActiveFilters(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
   };
 
-  const filteredData = stations.filter(d => {
-    const hasValidCoords = (d.lat != null && d.lng != null && !isNaN(Number(d.lat)) && !isNaN(Number(d.lng))) || (d.geoJson && d.geoJson.trim() !== '');
-    if (!hasValidCoords) return false;
+  const toggleDataTypeFilter = (type) => {
+    setActiveDataTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
+  };
 
-    const matchCat = activeFilters.includes(d.category);
+  const toggleGeometryFilter = (geomType) => {
+    setActiveGeometryTypes(prev => prev.includes(geomType) ? prev.filter(g => g !== geomType) : [...prev, geomType]);
+  };
+
+  const resetAllFilters = () => {
+    setActiveFilters(categories);
+    setActiveDataTypes(dataTypes);
+    setActiveGeometryTypes(geometryTypes);
+    setSearchQuery('');
+  };
+
+  const isFilterModified = 
+    activeFilters.length !== categories.length || 
+    activeDataTypes.length !== dataTypes.length || 
+    activeGeometryTypes.length !== geometryTypes.length || 
+    searchQuery.trim() !== '';
+
+  // LOGIKA FILTER GABUNGAN: NAMA + KATEGORI + DATA TERSEDIA + TIPE SPASIAL (POINT/GEOJSON)
+  const filteredData = stations.filter(d => {
+    const hasGeoJson = Boolean(d.geoJson && typeof d.geoJson === 'string' && d.geoJson.trim() !== '');
+    const hasPoint = d.lat != null && d.lng != null && !isNaN(Number(d.lat)) && !isNaN(Number(d.lng));
+    
+    if (!hasGeoJson && !hasPoint) return false;
+
+    // 1. Cek Pencarian Nama
     const q = searchQuery.toLowerCase().trim();
     const matchSearch = q === '' || (d.name && d.name.toLowerCase().includes(q));
-    
-    return matchCat && matchSearch;
+    if (!matchSearch) return false;
+
+    // 2. Cek Kategori
+    const matchCat = activeFilters.includes(d.category);
+    if (!matchCat) return false;
+
+    // 3. Cek Tipe Spasial (GeoJSON vs Point)
+    const itemGeomType = hasGeoJson ? 'geojson' : 'point';
+    const matchGeom = activeGeometryTypes.includes(itemGeomType);
+    if (!matchGeom) return false;
+
+    // 4. Cek Data Tersedia
+    const itemTypes = Array.isArray(d.availableDataTypes) ? d.availableDataTypes : [];
+    const matchDataType = itemTypes.length === 0 
+      ? activeDataTypes.length === dataTypes.length 
+      : itemTypes.some(t => activeDataTypes.includes(t));
+    if (!matchDataType) return false;
+
+    return true;
   });
 
   const handleInputChange = (e) => {
@@ -259,7 +308,7 @@ export default function App() {
 
   const handleDeleteStation = async (stationObj) => {
     if (!window.confirm(t.deleteConfirm)) return;
-    const targetId = stationObj.id;
+    const targetId = stationObj._id || stationObj.id;
 
     try { 
       const res = await fetch(`${API_URL}?id=${targetId}`, { method: 'DELETE' });
@@ -267,7 +316,7 @@ export default function App() {
         const errText = await res.text();
         throw new Error(`Status ${res.status}: ${errText}`);
       }
-      if (modalData && modalData.id === targetId) setModalData(null);
+      if (modalData && (modalData._id === targetId || modalData.id === targetId)) setModalData(null);
       await fetchStationsFromServer();
       alert(t.deleteSuccess);
     } catch (err) { 
@@ -342,9 +391,8 @@ export default function App() {
 
   return (
     <div className={`flex flex-col h-[100dvh] w-screen overflow-hidden font-sans transition-colors duration-300 ${theme.bgApp} ${theme.textMain}`}>
-      {/* HEADER: KIRI LOGO | TENGAH PILIHAN HALAMAN | KANAN BAHASA & MODE */}
+      {/* HEADER */}
       <header className={`${theme.bgNav} border-b px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col md:grid md:grid-cols-3 gap-2 md:gap-4 items-center z-[1000] shadow-sm w-full shrink-0 transition-colors duration-300`}>
-        {/* Kolom 1: Logo & Judul */}
         <div className="flex items-center justify-center md:justify-start gap-2.5 shrink-0">
           <img src="/logo.png" alt="Register Undip Logo" className="w-7 h-7 sm:w-9 sm:h-9 object-contain drop-shadow-sm" />
           <h1 className="text-base sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-500 bg-clip-text text-transparent">
@@ -352,7 +400,6 @@ export default function App() {
           </h1>
         </div>
 
-        {/* Kolom 2: Pilihan Halaman (Mengikuti isDark) */}
         <div className="flex items-center justify-between md:justify-center w-full gap-2">
           <div className={`flex flex-1 md:flex-initial p-1 rounded-xl text-xs font-bold gap-1 transition-colors duration-300 ${theme.pillContainer}`}>
             <button 
@@ -369,7 +416,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* Tombol Bahasa & Mode khusus tampilan Mobile */}
           <div className="flex md:hidden items-center gap-1.5 shrink-0">
             <button onClick={() => setLang(lang === 'id' ? 'en' : 'id')} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border font-bold text-xs ${theme.bgCard} hover:border-blue-500 transition`}>
               <Globe size={13} className="text-blue-500" /> {lang.toUpperCase()}
@@ -380,7 +426,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Kolom 3: Tombol Bahasa & Mode khusus tampilan Desktop */}
         <div className="hidden md:flex items-center justify-end gap-2 shrink-0">
           <button onClick={() => setLang(lang === 'id' ? 'en' : 'id')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-bold text-xs ${theme.bgCard} hover:border-blue-500 transition`}>
             <Globe size={14} className="text-blue-500" /> {lang.toUpperCase()}
@@ -394,7 +439,6 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden relative w-full h-full">
         {activeTab === 'dashboard' && (
           <div className="relative flex-1 w-full h-full overflow-y-auto">
-            {/* BACKGROUND PETA PENUH */}
             <div className={`fixed inset-0 w-screen h-screen z-0 pointer-events-none filter saturate-150 transition-opacity duration-300 ${isDark ? 'opacity-20' : 'opacity-35'}`}>
               <MapContainer 
                 center={[-2.5, 118.0]} 
@@ -414,7 +458,6 @@ export default function App() {
             
             <div className="relative z-10 px-4 sm:px-8 md:px-12 py-8 sm:py-12 flex flex-col items-center">
               <div className="max-w-4xl w-full text-center mb-10 sm:mb-14">
-                {/* KOTAK LOGO TENGAH (Mengikuti isDark) */}
                 <div className={`inline-flex items-center justify-center mb-5 p-4 rounded-3xl shadow-xl border backdrop-blur-md transition-colors duration-300 ${isDark ? 'bg-slate-900/90 border-slate-700' : 'bg-white/95 border-slate-200/80'}`}>
                    <img src="/logo.png" alt="Logo Large" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md" />
                 </div>
@@ -465,6 +508,15 @@ export default function App() {
                   <h2 className="font-bold text-base sm:text-lg">{t.filterTitle}</h2>
                 </div>
                 <div className="flex items-center gap-1">
+                  {isFilterModified && (
+                    <button 
+                      onClick={resetAllFilters} 
+                      title="Reset Semua Filter"
+                      className={`px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition ${isDark ? 'bg-slate-800 text-amber-400 hover:bg-slate-700' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}
+                    >
+                      <RotateCcw size={11} /> {t.resetFilter}
+                    </button>
+                  )}
                   <button 
                     onClick={fetchStationsFromServer} 
                     title="Sinkronisasi Database"
@@ -483,6 +535,7 @@ export default function App() {
               )}
 
               <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-5">
+                {/* 1. PENCARIAN NAMA */}
                 <div className="relative flex items-center">
                   <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
                   <input 
@@ -494,8 +547,62 @@ export default function App() {
                   />
                   {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600"><X size={14} /></button>}
                 </div>
+
+                {/* 2. FILTER TIPE SPASIAL (POINT / GEOJSON) */}
                 <div>
-                  <p className={`text-xs font-bold uppercase tracking-wider mb-3 ${theme.textMuted}`}>{t.mapCategory}</p>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-2.5 ${theme.textMuted}`}>{t.geometryFilter}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={() => toggleGeometryFilter('point')} 
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl border-2 transition-all ${activeGeometryTypes.includes('point') ? 'bg-cyan-500/10 border-cyan-500' : theme.bgFilterItem}`}
+                    >
+                      <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${activeGeometryTypes.includes('point') ? 'text-cyan-500' : theme.textMuted}`}>
+                        <MapPin size={13} /> {t.geomPoint}
+                      </span>
+                      <div className={`w-4 h-4 shrink-0 rounded-md flex items-center justify-center transition-colors ${activeGeometryTypes.includes('point') ? 'bg-cyan-500' : (isDark ? 'bg-slate-700' : 'bg-slate-200')}`}>
+                        {activeGeometryTypes.includes('point') && <Check size={10} strokeWidth={3} className="text-white" />}
+                      </div>
+                    </button>
+
+                    <button 
+                      onClick={() => toggleGeometryFilter('geojson')} 
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl border-2 transition-all ${activeGeometryTypes.includes('geojson') ? 'bg-cyan-500/10 border-cyan-500' : theme.bgFilterItem}`}
+                    >
+                      <span className={`flex items-center gap-1.5 text-[11px] font-semibold text-left leading-tight ${activeGeometryTypes.includes('geojson') ? 'text-cyan-500' : theme.textMuted}`}>
+                        <Shapes size={13} className="shrink-0" /> GeoJSON
+                      </span>
+                      <div className={`w-4 h-4 shrink-0 rounded-md flex items-center justify-center transition-colors ${activeGeometryTypes.includes('geojson') ? 'bg-cyan-500' : (isDark ? 'bg-slate-700' : 'bg-slate-200')}`}>
+                        {activeGeometryTypes.includes('geojson') && <Check size={10} strokeWidth={3} className="text-white" />}
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. FILTER DATA TERSEDIA */}
+                <div>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-2.5 ${theme.textMuted}`}>{t.dataTypeFilter}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {dataTypes.map(type => {
+                      const isActive = activeDataTypes.includes(type);
+                      return (
+                        <button 
+                          key={type} 
+                          onClick={() => toggleDataTypeFilter(type)} 
+                          className={`flex items-center justify-between px-3 py-2 rounded-xl border-2 transition-all ${isActive ? 'bg-teal-500/10 border-teal-500' : theme.bgFilterItem}`}
+                        >
+                          <span className={`text-[11px] font-semibold text-left leading-tight pr-1 ${isActive ? 'text-teal-500' : theme.textMuted}`}>{type}</span>
+                          <div className={`w-4 h-4 shrink-0 rounded-md flex items-center justify-center transition-colors ${isActive ? 'bg-teal-500' : (isDark ? 'bg-slate-700' : 'bg-slate-200')}`}>
+                            {isActive && <Check size={10} strokeWidth={3} className="text-white" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 4. FILTER KATEGORI PEMETAAN */}
+                <div>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-2.5 ${theme.textMuted}`}>{t.mapCategory}</p>
                   <div className="flex flex-col gap-2">
                     {categories.map(cat => {
                       const isActive = activeFilters.includes(cat);
@@ -509,6 +616,7 @@ export default function App() {
                   </div>
                 </div>
               </div>
+
               <div className={`p-4 sm:p-5 border-t ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-50/80 border-slate-200'}`}>
                 <div className="flex flex-col gap-3">
                   <div className={`flex items-center justify-center gap-2 text-xs sm:text-sm font-medium py-2.5 px-3 rounded-xl border shadow-sm ${theme.bgCard}`}>
@@ -533,7 +641,6 @@ export default function App() {
             <div className="w-full h-full relative z-0">
               <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`absolute top-3 left-3 sm:top-4 sm:left-4 z-[999] p-2.5 rounded-2xl shadow-xl border focus:outline-none transition-all ${theme.bgCard} hover:text-blue-500 active:scale-95`}><Menu size={20} className="sm:w-6 sm:h-6" /></button>
               
-              {/* PILIHAN JENIS MAP (Mengikuti isDark) */}
               <div className={`absolute top-3 right-3 sm:top-4 sm:right-4 z-[999] flex items-center gap-1 p-1 rounded-2xl shadow-xl border backdrop-blur-md transition-colors duration-300 ${isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/95 border-slate-200/80'}`}>
                 <button 
                   onClick={() => setCurrentBasemap('satellite')} 
