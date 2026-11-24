@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap, GeoJSON } from 'react-leaflet';
 import { 
   Filter, Database, X, Check, Menu, Plus, LogOut, User, 
-  Globe, Moon, Sun, Mail, MessageCircle, Trash2, Search, Layers, Send, Map as MapIcon, CheckSquare, Upload, RefreshCw, MapPin, Shapes, RotateCcw
+  Globe, Moon, Sun, Mail, MessageCircle, Trash2, Search, Layers, Send, Map as MapIcon, CheckSquare, Upload, RefreshCw, MapPin, Shapes, RotateCcw, ChevronDown
 } from 'lucide-react'; 
 import { Instagram } from 'lucide-brands';
 
@@ -77,6 +77,7 @@ const dict = {
     contactUs: "Hubungi Kami", filterTitle: "Filter Data Peta", showing: "Menampilkan", activeSpots: "data aktif",
     mapCategory: "Kategori Pemetaan", dataTypeFilter: "Data Tersedia", geometryFilter: "Tipe Spasial",
     geomPoint: "Titik (Point)", geomGeoJson: "Poligon / Area (GeoJSON)", resetFilter: "Reset",
+    selectAll: "Pilih Semua", clearAll: "Kosongkan",
     fullMeta: "Lihat Metadata Penuh",
     modalAddTitle: "Input Data Peta Baru", saveBtn: "Simpan & Tampilkan Peta",
     nameLabel: "Nama Data / Proyek Peta", lat: "Latitude (Titik Tengah)", lng: "Longitude (Titik Tengah)",
@@ -104,6 +105,7 @@ const dict = {
     contactUs: "Contact Us", filterTitle: "Map Data Filter", showing: "Showing", activeSpots: "active datasets",
     mapCategory: "Mapping Category", dataTypeFilter: "Available Data", geometryFilter: "Spatial Type",
     geomPoint: "Point Marker", geomGeoJson: "Polygon / Area (GeoJSON)", resetFilter: "Reset",
+    selectAll: "Select All", clearAll: "Clear",
     fullMeta: "View Full Metadata",
     modalAddTitle: "Input New Map Data", saveBtn: "Save & Display Map",
     nameLabel: "Map Data / Project Name", lat: "Latitude (Center Point)", lng: "Longitude (Center Point)",
@@ -131,12 +133,26 @@ export default function App() {
   const [lang, setLang] = useState('id');
   const t = dict[lang];
 
-  // STATE FILTER LENGKAP (Kategori, Data Tersedia, & Tipe Spasial Point/GeoJSON)
+  // STATE FILTER
   const [activeFilters, setActiveFilters] = useState(categories);
   const [activeDataTypes, setActiveDataTypes] = useState(dataTypes);
   const [activeGeometryTypes, setActiveGeometryTypes] = useState(geometryTypes);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentBasemap, setCurrentBasemap] = useState('satellite');
+
+  // STATE DROPDOWN / ACCORDION FILTER SIDEBAR
+  const [openFilterSections, setOpenFilterSections] = useState({
+    geometry: true,
+    dataType: true,
+    category: false
+  });
+
+  const toggleFilterSection = (sectionKey) => {
+    setOpenFilterSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }));
+  };
   
   const [modalData, setModalData] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -222,28 +238,23 @@ export default function App() {
     activeGeometryTypes.length !== geometryTypes.length || 
     searchQuery.trim() !== '';
 
-  // LOGIKA FILTER GABUNGAN: NAMA + KATEGORI + DATA TERSEDIA + TIPE SPASIAL (POINT/GEOJSON)
   const filteredData = stations.filter(d => {
     const hasGeoJson = Boolean(d.geoJson && typeof d.geoJson === 'string' && d.geoJson.trim() !== '');
     const hasPoint = d.lat != null && d.lng != null && !isNaN(Number(d.lat)) && !isNaN(Number(d.lng));
     
     if (!hasGeoJson && !hasPoint) return false;
 
-    // 1. Cek Pencarian Nama
     const q = searchQuery.toLowerCase().trim();
     const matchSearch = q === '' || (d.name && d.name.toLowerCase().includes(q));
     if (!matchSearch) return false;
 
-    // 2. Cek Kategori
     const matchCat = activeFilters.includes(d.category);
     if (!matchCat) return false;
 
-    // 3. Cek Tipe Spasial (GeoJSON vs Point)
     const itemGeomType = hasGeoJson ? 'geojson' : 'point';
     const matchGeom = activeGeometryTypes.includes(itemGeomType);
     if (!matchGeom) return false;
 
-    // 4. Cek Data Tersedia
     const itemTypes = Array.isArray(d.availableDataTypes) ? d.availableDataTypes : [];
     const matchDataType = itemTypes.length === 0 
       ? activeDataTypes.length === dataTypes.length 
@@ -365,6 +376,8 @@ export default function App() {
     bgCard: isDark ? 'bg-slate-900/90 border-slate-800 text-slate-200 backdrop-blur-md' : 'bg-white/95 border-slate-200/80 text-slate-700 shadow-lg shadow-blue-500/5 backdrop-blur-md',
     bgSidebar: isDark ? 'bg-slate-900/95 border-slate-800 backdrop-blur-md' : 'bg-white/95 border-slate-200/80 backdrop-blur-md shadow-2xl',
     bgFilterItem: isDark ? 'bg-slate-800/80 border-slate-700 hover:bg-slate-700' : 'bg-slate-50 border-slate-200/80 hover:bg-blue-50/50',
+    bgAccordion: isDark ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-50/90 border-slate-200/90',
+    bgAccordionHeader: isDark ? 'hover:bg-slate-800/70' : 'hover:bg-slate-100/80',
     textMuted: isDark ? 'text-slate-400' : 'text-slate-500',
     pillContainer: isDark ? 'bg-slate-800/90 border border-slate-700' : 'bg-slate-200/80 border border-slate-300/60',
     pillInactive: isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900',
@@ -534,9 +547,9 @@ export default function App() {
                 </div>
               )}
 
-              <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-5">
+              <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-3">
                 {/* 1. PENCARIAN NAMA */}
-                <div className="relative flex items-center">
+                <div className="relative flex items-center mb-1">
                   <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
                   <input 
                     type="text" 
@@ -548,72 +561,150 @@ export default function App() {
                   {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600"><X size={14} /></button>}
                 </div>
 
-                {/* 2. FILTER TIPE SPASIAL (POINT / GEOJSON) */}
-                <div>
-                  <p className={`text-xs font-bold uppercase tracking-wider mb-2.5 ${theme.textMuted}`}>{t.geometryFilter}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button 
-                      onClick={() => toggleGeometryFilter('point')} 
-                      className={`flex items-center justify-between px-3 py-2 rounded-xl border-2 transition-all ${activeGeometryTypes.includes('point') ? 'bg-cyan-500/10 border-cyan-500' : theme.bgFilterItem}`}
-                    >
-                      <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${activeGeometryTypes.includes('point') ? 'text-cyan-500' : theme.textMuted}`}>
-                        <MapPin size={13} /> {t.geomPoint}
+                {/* 2. DROP BAR: TIPE SPASIAL (POINT / GEOJSON) */}
+                <div className={`rounded-2xl border overflow-hidden transition-colors ${theme.bgAccordion}`}>
+                  <button
+                    type="button"
+                    onClick={() => toggleFilterSection('geometry')}
+                    className={`w-full px-3.5 py-2.5 flex items-center justify-between transition-colors ${theme.bgAccordionHeader}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Shapes size={14} className="text-cyan-500" />
+                      <span className="text-xs font-bold tracking-wide">{t.geometryFilter}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isDark ? 'bg-cyan-500/15 text-cyan-400' : 'bg-cyan-100 text-cyan-700'}`}>
+                        {activeGeometryTypes.length}/{geometryTypes.length}
                       </span>
-                      <div className={`w-4 h-4 shrink-0 rounded-md flex items-center justify-center transition-colors ${activeGeometryTypes.includes('point') ? 'bg-cyan-500' : (isDark ? 'bg-slate-700' : 'bg-slate-200')}`}>
-                        {activeGeometryTypes.includes('point') && <Check size={10} strokeWidth={3} className="text-white" />}
-                      </div>
-                    </button>
+                      <ChevronDown size={15} className={`${theme.textMuted} transition-transform duration-200 ${openFilterSections.geometry ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
 
-                    <button 
-                      onClick={() => toggleGeometryFilter('geojson')} 
-                      className={`flex items-center justify-between px-3 py-2 rounded-xl border-2 transition-all ${activeGeometryTypes.includes('geojson') ? 'bg-cyan-500/10 border-cyan-500' : theme.bgFilterItem}`}
-                    >
-                      <span className={`flex items-center gap-1.5 text-[11px] font-semibold text-left leading-tight ${activeGeometryTypes.includes('geojson') ? 'text-cyan-500' : theme.textMuted}`}>
-                        <Shapes size={13} className="shrink-0" /> GeoJSON
-                      </span>
-                      <div className={`w-4 h-4 shrink-0 rounded-md flex items-center justify-center transition-colors ${activeGeometryTypes.includes('geojson') ? 'bg-cyan-500' : (isDark ? 'bg-slate-700' : 'bg-slate-200')}`}>
-                        {activeGeometryTypes.includes('geojson') && <Check size={10} strokeWidth={3} className="text-white" />}
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 3. FILTER DATA TERSEDIA */}
-                <div>
-                  <p className={`text-xs font-bold uppercase tracking-wider mb-2.5 ${theme.textMuted}`}>{t.dataTypeFilter}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {dataTypes.map(type => {
-                      const isActive = activeDataTypes.includes(type);
-                      return (
+                  {openFilterSections.geometry && (
+                    <div className={`p-3 pt-2 border-t ${isDark ? 'border-slate-800/80' : 'border-slate-200/80'}`}>
+                      <div className="grid grid-cols-2 gap-2">
                         <button 
-                          key={type} 
-                          onClick={() => toggleDataTypeFilter(type)} 
-                          className={`flex items-center justify-between px-3 py-2 rounded-xl border-2 transition-all ${isActive ? 'bg-teal-500/10 border-teal-500' : theme.bgFilterItem}`}
+                          onClick={() => toggleGeometryFilter('point')} 
+                          className={`flex items-center justify-between px-2.5 py-2 rounded-xl border-2 transition-all ${activeGeometryTypes.includes('point') ? 'bg-cyan-500/10 border-cyan-500' : theme.bgFilterItem}`}
                         >
-                          <span className={`text-[11px] font-semibold text-left leading-tight pr-1 ${isActive ? 'text-teal-500' : theme.textMuted}`}>{type}</span>
-                          <div className={`w-4 h-4 shrink-0 rounded-md flex items-center justify-center transition-colors ${isActive ? 'bg-teal-500' : (isDark ? 'bg-slate-700' : 'bg-slate-200')}`}>
-                            {isActive && <Check size={10} strokeWidth={3} className="text-white" />}
+                          <span className={`flex items-center gap-1 text-[11px] font-semibold ${activeGeometryTypes.includes('point') ? 'text-cyan-500' : theme.textMuted}`}>
+                            <MapPin size={12} className="shrink-0" /> {t.geomPoint}
+                          </span>
+                          <div className={`w-4 h-4 shrink-0 rounded-md flex items-center justify-center transition-colors ${activeGeometryTypes.includes('point') ? 'bg-cyan-500' : (isDark ? 'bg-slate-700' : 'bg-slate-200')}`}>
+                            {activeGeometryTypes.includes('point') && <Check size={10} strokeWidth={3} className="text-white" />}
                           </div>
                         </button>
-                      );
-                    })}
-                  </div>
+
+                        <button 
+                          onClick={() => toggleGeometryFilter('geojson')} 
+                          className={`flex items-center justify-between px-2.5 py-2 rounded-xl border-2 transition-all ${activeGeometryTypes.includes('geojson') ? 'bg-cyan-500/10 border-cyan-500' : theme.bgFilterItem}`}
+                        >
+                          <span className={`flex items-center gap-1 text-[11px] font-semibold ${activeGeometryTypes.includes('geojson') ? 'text-cyan-500' : theme.textMuted}`}>
+                            <Shapes size={12} className="shrink-0" /> GeoJSON
+                          </span>
+                          <div className={`w-4 h-4 shrink-0 rounded-md flex items-center justify-center transition-colors ${activeGeometryTypes.includes('geojson') ? 'bg-cyan-500' : (isDark ? 'bg-slate-700' : 'bg-slate-200')}`}>
+                            {activeGeometryTypes.includes('geojson') && <Check size={10} strokeWidth={3} className="text-white" />}
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* 4. FILTER KATEGORI PEMETAAN */}
-                <div>
-                  <p className={`text-xs font-bold uppercase tracking-wider mb-2.5 ${theme.textMuted}`}>{t.mapCategory}</p>
-                  <div className="flex flex-col gap-2">
-                    {categories.map(cat => {
-                      const isActive = activeFilters.includes(cat);
-                      return (
-                        <button key={cat} onClick={() => toggleFilter(cat)} className={`flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl border-2 transition-all ${isActive ? 'bg-blue-500/10 border-blue-500' : theme.bgFilterItem}`}>
-                          <span className={`text-[11px] sm:text-[13px] font-semibold text-left leading-tight pr-2 ${isActive ? 'text-blue-500' : theme.textMuted}`}>{cat}</span>
-                          <div className={`w-5 h-5 shrink-0 rounded-lg flex items-center justify-center transition-colors ${isActive ? 'bg-blue-500' : (isDark ? 'bg-slate-700' : 'bg-slate-200')}`}>{isActive && <Check size={12} strokeWidth={3} className="text-white" />}</div>
+                {/* 3. DROP BAR: DATA TERSEDIA */}
+                <div className={`rounded-2xl border overflow-hidden transition-colors ${theme.bgAccordion}`}>
+                  <button
+                    type="button"
+                    onClick={() => toggleFilterSection('dataType')}
+                    className={`w-full px-3.5 py-2.5 flex items-center justify-between transition-colors ${theme.bgAccordionHeader}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <CheckSquare size={14} className="text-teal-500" />
+                      <span className="text-xs font-bold tracking-wide">{t.dataTypeFilter}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isDark ? 'bg-teal-500/15 text-teal-400' : 'bg-teal-100 text-teal-700'}`}>
+                        {activeDataTypes.length}/{dataTypes.length}
+                      </span>
+                      <ChevronDown size={15} className={`${theme.textMuted} transition-transform duration-200 ${openFilterSections.dataType ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
+
+                  {openFilterSections.dataType && (
+                    <div className={`p-3 pt-2 border-t ${isDark ? 'border-slate-800/80' : 'border-slate-200/80'}`}>
+                      <div className="grid grid-cols-2 gap-2">
+                        {dataTypes.map(type => {
+                          const isActive = activeDataTypes.includes(type);
+                          return (
+                            <button 
+                              key={type} 
+                              onClick={() => toggleDataTypeFilter(type)} 
+                              className={`flex items-center justify-between px-2.5 py-2 rounded-xl border-2 transition-all ${isActive ? 'bg-teal-500/10 border-teal-500' : theme.bgFilterItem}`}
+                            >
+                              <span className={`text-[11px] font-semibold text-left leading-tight pr-1 ${isActive ? 'text-teal-500' : theme.textMuted}`}>{type}</span>
+                              <div className={`w-4 h-4 shrink-0 rounded-md flex items-center justify-center transition-colors ${isActive ? 'bg-teal-500' : (isDark ? 'bg-slate-700' : 'bg-slate-200')}`}>
+                                {isActive && <Check size={10} strokeWidth={3} className="text-white" />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. DROP BAR: KATEGORI PEMETAAN */}
+                <div className={`rounded-2xl border overflow-hidden transition-colors ${theme.bgAccordion}`}>
+                  <button
+                    type="button"
+                    onClick={() => toggleFilterSection('category')}
+                    className={`w-full px-3.5 py-2.5 flex items-center justify-between transition-colors ${theme.bgAccordionHeader}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Layers size={14} className="text-blue-500" />
+                      <span className="text-xs font-bold tracking-wide">{t.mapCategory}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isDark ? 'bg-blue-500/15 text-blue-400' : 'bg-blue-100 text-blue-700'}`}>
+                        {activeFilters.length}/{categories.length}
+                      </span>
+                      <ChevronDown size={15} className={`${theme.textMuted} transition-transform duration-200 ${openFilterSections.category ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
+
+                  {openFilterSections.category && (
+                    <div className={`p-3 pt-2 border-t space-y-2 ${isDark ? 'border-slate-800/80' : 'border-slate-200/80'}`}>
+                      <div className="flex items-center justify-end gap-2 pb-1">
+                        <button
+                          type="button"
+                          onClick={() => setActiveFilters(categories)}
+                          className="text-[10px] font-bold text-blue-500 hover:underline"
+                        >
+                          {t.selectAll}
                         </button>
-                      )
-                    })}
-                  </div>
+                        <span className="text-slate-400 text-[10px]">•</span>
+                        <button
+                          type="button"
+                          onClick={() => setActiveFilters([])}
+                          className={`text-[10px] font-bold hover:underline ${theme.textMuted}`}
+                        >
+                          {t.clearAll}
+                        </button>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        {categories.map(cat => {
+                          const isActive = activeFilters.includes(cat);
+                          return (
+                            <button key={cat} onClick={() => toggleFilter(cat)} className={`flex items-center justify-between w-full px-3 py-2 rounded-xl border-2 transition-all ${isActive ? 'bg-blue-500/10 border-blue-500' : theme.bgFilterItem}`}>
+                              <span className={`text-[11px] sm:text-[12px] font-semibold text-left leading-tight pr-2 ${isActive ? 'text-blue-500' : theme.textMuted}`}>{cat}</span>
+                              <div className={`w-4 h-4 shrink-0 rounded-md flex items-center justify-center transition-colors ${isActive ? 'bg-blue-500' : (isDark ? 'bg-slate-700' : 'bg-slate-200')}`}>{isActive && <Check size={11} strokeWidth={3} className="text-white" />}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
