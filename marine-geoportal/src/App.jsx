@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap, GeoJSON } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, ZoomControl, useMap, GeoJSON } from 'react-leaflet';
 import { 
   Filter, Database, X, Check, Menu, Plus, LogOut, User, 
   Globe, Moon, Sun, Mail, MessageCircle, Trash2, Search, Layers, Send, Map as MapIcon, CheckSquare, Upload, RefreshCw, MapPin, Shapes, RotateCcw, ChevronDown
@@ -786,11 +786,20 @@ export default function App() {
                           </Popup>
                         </GeoJSON>
                       ) : (
-                        <Marker position={[Number(data.lat), Number(data.lng)]}>
+                        <CircleMarker
+                          center={[Number(data.lat), Number(data.lng)]}
+                          radius={7}
+                          pathOptions={{
+                            color: '#ffffff',      // warna garis tepi lingkaran (putih agar kontras di basemap Satelit & OSM)
+                            weight: 2,             // ketebalan garis tepi
+                            fillColor: '#0284c7',  // warna isi lingkaran (biru)
+                            fillOpacity: 0.95      // transparansi isi
+                          }}
+                         >
                           <Popup className={`rounded-2xl p-0 overflow-hidden ${isDark ? 'dark-popup' : ''}`}>
                             {renderPopupContent(data)}
                           </Popup>
-                        </Marker>
+                      </CircleMarker>
                       )}
                     </React.Fragment>
                   )
